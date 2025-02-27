@@ -76,6 +76,7 @@ export interface IncomeSourcesDataPoint {
   retirement: number;
   socialSecurity: number;
   pension: number;
+  rmd?: number; // Added for Required Minimum Distributions
 }
 
 export interface SocialSecurityDataPoint {

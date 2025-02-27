@@ -173,12 +173,22 @@ function generateRecommendations(
     if (inputs.riskProfile === "aggressive" && inputs.retirementAge - inputs.currentAge < 10) {
       recommendations.push("As you approach retirement, consider shifting to a more conservative investment mix to protect your savings.");
     }
+    
+    // Add RMD recommendation for well-funded plans
+    if (inputs.retirementAccounts > 0) {
+      recommendations.push("Plan for Required Minimum Distributions (RMDs) from your traditional retirement accounts starting at age 73. Consider Roth conversions to minimize RMD tax impact.");
+    }
   } else if (sustainabilityScore >= 60) {
     recommendations.push("Your retirement plan is on track but could benefit from some adjustments to improve sustainability.");
     
     // Recommend increased savings if there's a gap
     if (inputs.annual401kContribution < 20500) {
       recommendations.push("Consider increasing your 401(k) contributions to maximize tax advantages and boost retirement savings.");
+    }
+    
+    // Add tax planning recommendation for RMDs
+    if (inputs.retirementAccounts > 0) {
+      recommendations.push("Develop a withdrawal strategy that balances tax efficiency with RMD requirements. Consider drawing from taxable accounts before age 73 to reduce future RMD tax impact.");
     }
   } else {
     recommendations.push("Your current retirement plan may not provide sufficient income. Consider these adjustments to improve sustainability:");
@@ -224,7 +234,7 @@ function generateRecommendations(
   
   // Tax optimization
   if (inputs.rothAccounts < inputs.retirementAccounts * 0.3) {
-    recommendations.push("Consider expanding your Roth investments to create tax diversification in retirement.");
+    recommendations.push("Consider expanding your Roth investments to create tax diversification in retirement and reduce future RMD tax burdens.");
   }
   
   return recommendations;
@@ -234,10 +244,16 @@ function generateNetWorthData(inputs: CalculatorInputs) {
   const data = [];
   const hasSpouse = inputs.spouseName.trim() !== "";
   
-  let cash = inputs.cashSavings;
-  let retirement = inputs.retirementAccounts + inputs.rothAccounts;
+  // Split retirement accounts into traditional and Roth for RMD calculations
+  let traditionalRetirement = inputs.retirementAccounts;
+  let rothRetirement = inputs.rothAccounts;
   let taxable = inputs.taxableInvestments;
+  let cash = inputs.cashSavings;
   let realEstate = inputs.realEstateEquity;
+  
+  // Track annual contributions
+  const annual401kContribution = inputs.annual401kContribution;
+  const annualRothContribution = inputs.annualRothContribution;
   
   // Pre-retirement (using primary person's retirement age)
   for (let age = inputs.currentAge; age <= inputs.retirementAge; age++) {
@@ -246,12 +262,14 @@ function generateNetWorthData(inputs: CalculatorInputs) {
     const spouseIsWorking = hasSpouse && spouseAge < inputs.spouseRetirementAge;
     
     // Add contributions
-    retirement += inputs.annual401kContribution + inputs.annualRothContribution;
+    traditionalRetirement += annual401kContribution;
+    rothRetirement += annualRothContribution;
     taxable += inputs.annualTaxableContribution;
     
     // Apply returns
     cash *= (1 + (inputs.investmentReturnRate / 3) / 100);
-    retirement *= (1 + inputs.investmentReturnRate / 100);
+    traditionalRetirement *= (1 + inputs.investmentReturnRate / 100);
+    rothRetirement *= (1 + inputs.investmentReturnRate / 100);
     taxable *= (1 + inputs.investmentReturnRate / 100);
     realEstate *= (1 + (inputs.investmentReturnRate / 2) / 100);
     
@@ -267,10 +285,13 @@ function generateNetWorthData(inputs: CalculatorInputs) {
       realEstate += inputs.homeDownPayment;
     }
     
+    // Combine retirement accounts for data display
+    const totalRetirement = traditionalRetirement + rothRetirement;
+    
     data.push({
       age,
       cash: Math.round(cash),
-      retirement: Math.round(retirement),
+      retirement: Math.round(totalRetirement),
       taxable: Math.round(taxable),
       realEstate: Math.round(realEstate)
     });
@@ -278,30 +299,85 @@ function generateNetWorthData(inputs: CalculatorInputs) {
   
   // Post-retirement (20 years after retirement)
   const withdrawalRate = inputs.retirementWithdrawalRate / 100;
+  const rmdStartAge = 73; // Current RMD start age (as of 2023 SECURE Act 2.0)
+  
   for (let age = inputs.retirementAge + 1; age <= inputs.retirementAge + 20; age++) {
-    // Calculate withdrawal
-    const totalPortfolio = cash + retirement + taxable;
-    const withdrawal = totalPortfolio * withdrawalRate;
+    // Calculate total portfolio value
+    const totalPortfolioValue = cash + traditionalRetirement + rothRetirement + taxable;
     
-    // Distribute withdrawal proportionally
-    const cashPortion = cash / totalPortfolio;
-    const retirementPortion = retirement / totalPortfolio;
-    const taxablePortion = taxable / totalPortfolio;
+    // Calculate income sources first
+    const socialSecurityIncome = age >= inputs.ssStartAge ? (inputs.socialSecurityBenefit * 12) : 0;
+    const spouseSocialSecurityIncome = hasSpouse && age >= inputs.ssStartAge ? (inputs.spouseSocialSecurityBenefit * 12) : 0;
+    const pensionIncome = inputs.hasPension ? inputs.pensionAmount : 0;
+    const fixedIncome = socialSecurityIncome + spouseSocialSecurityIncome + pensionIncome;
     
-    cash -= withdrawal * cashPortion;
-    retirement -= withdrawal * retirementPortion;
-    taxable -= withdrawal * taxablePortion;
+    // Calculate needed withdrawal from investments
+    let neededWithdrawal = Math.max(0, inputs.retirementAnnualSpending - fixedIncome);
     
-    // Apply returns (continuing growth on remaining assets)
-    cash *= (1 + (inputs.investmentReturnRate / 3) / 100);
-    retirement *= (1 + inputs.investmentReturnRate / 100);
+    // Calculate RMD if applicable
+    let rmdAmount = 0;
+    if (age >= rmdStartAge && traditionalRetirement > 0) {
+      const rmdDivisor = getRMDDivisor(age);
+      rmdAmount = traditionalRetirement / rmdDivisor;
+    }
+    
+    // Determine withdrawal strategy based on RMDs and needs
+    let traditionalWithdrawal = 0;
+    let rothWithdrawal = 0;
+    let taxableWithdrawal = 0;
+    let cashWithdrawal = 0;
+    
+    // Always take RMD first if required
+    if (rmdAmount > 0) {
+      traditionalWithdrawal = rmdAmount;
+      neededWithdrawal = Math.max(0, neededWithdrawal - rmdAmount);
+    }
+    
+    // Then withdraw from taxable accounts
+    if (neededWithdrawal > 0 && taxable > 0) {
+      taxableWithdrawal = Math.min(neededWithdrawal, taxable);
+      neededWithdrawal -= taxableWithdrawal;
+    }
+    
+    // Then use cash
+    if (neededWithdrawal > 0 && cash > 0) {
+      cashWithdrawal = Math.min(neededWithdrawal, cash);
+      neededWithdrawal -= cashWithdrawal;
+    }
+    
+    // Then use additional traditional IRA funds if needed
+    if (neededWithdrawal > 0 && traditionalRetirement > traditionalWithdrawal) {
+      const additionalTraditionalWithdrawal = Math.min(neededWithdrawal, traditionalRetirement - traditionalWithdrawal);
+      traditionalWithdrawal += additionalTraditionalWithdrawal;
+      neededWithdrawal -= additionalTraditionalWithdrawal;
+    }
+    
+    // Last, use Roth if still needed
+    if (neededWithdrawal > 0 && rothRetirement > 0) {
+      rothWithdrawal = Math.min(neededWithdrawal, rothRetirement);
+      neededWithdrawal -= rothWithdrawal;
+    }
+    
+    // Apply withdrawals
+    traditionalRetirement -= traditionalWithdrawal;
+    rothRetirement -= rothWithdrawal;
+    taxable -= taxableWithdrawal;
+    cash -= cashWithdrawal;
+    
+    // Apply growth to remaining balances
+    traditionalRetirement *= (1 + inputs.investmentReturnRate / 100);
+    rothRetirement *= (1 + inputs.investmentReturnRate / 100);
     taxable *= (1 + inputs.investmentReturnRate / 100);
+    cash *= (1 + (inputs.investmentReturnRate / 3) / 100);
     realEstate *= (1 + (inputs.investmentReturnRate / 2) / 100);
+    
+    // Combine retirement accounts for data display
+    const totalRetirement = traditionalRetirement + rothRetirement;
     
     data.push({
       age,
       cash: Math.max(0, Math.round(cash)),
-      retirement: Math.max(0, Math.round(retirement)),
+      retirement: Math.max(0, Math.round(totalRetirement)),
       taxable: Math.max(0, Math.round(taxable)),
       realEstate: Math.round(realEstate)
     });
@@ -310,15 +386,54 @@ function generateNetWorthData(inputs: CalculatorInputs) {
   return data;
 }
 
+// RMD divisor table (simplified for demonstration)
+function getRMDDivisor(age: number): number {
+  const rmdTable: {[key: number]: number} = {
+    73: 26.5, 74: 25.5, 75: 24.6, 76: 23.7, 77: 22.9, 78: 22.0, 79: 21.1, 80: 20.2,
+    81: 19.4, 82: 18.5, 83: 17.7, 84: 16.8, 85: 16.0, 86: 15.2, 87: 14.4, 88: 13.7,
+    89: 12.9, 90: 12.2, 91: 11.5, 92: 10.8, 93: 10.1, 94: 9.5, 95: 8.9, 96: 8.4,
+    97: 7.8, 98: 7.3, 99: 6.8, 100: 6.4
+  };
+  
+  // Use default divisor for ages not in table
+  return rmdTable[age] || 20.0;
+}
+
 function generateIncomeSourcesData(inputs: CalculatorInputs) {
   const data = [];
   const hasSpouse = inputs.spouseName.trim() !== "";
   
+  // Split retirement accounts for RMD calculations
+  let traditionalRetirement = inputs.retirementAccounts;
+  let rothRetirement = inputs.rothAccounts;
+  let taxable = inputs.taxableInvestments;
   let employmentIncome = inputs.annualIncome;
   let spouseIncome = hasSpouse ? inputs.spouseIncome : 0;
   
-  // Pre-retirement
-  for (let age = inputs.currentAge; age <= inputs.retirementAge + 20; age++) {
+  // Track annual contributions
+  const annual401kContribution = inputs.annual401kContribution;
+  const annualRothContribution = inputs.annualRothContribution;
+  
+  // Grow accounts during pre-retirement
+  for (let year = 0; year < inputs.retirementAge - inputs.currentAge; year++) {
+    traditionalRetirement += annual401kContribution;
+    rothRetirement += annualRothContribution;
+    taxable += inputs.annualTaxableContribution;
+    
+    traditionalRetirement *= (1 + inputs.investmentReturnRate / 100);
+    rothRetirement *= (1 + inputs.investmentReturnRate / 100);
+    taxable *= (1 + inputs.investmentReturnRate / 100);
+    
+    employmentIncome *= (1 + inputs.incomeGrowthRate / 100);
+    if (hasSpouse) {
+      spouseIncome *= (1 + inputs.spouseIncomeGrowthRate / 100);
+    }
+  }
+  
+  const rmdStartAge = 73;
+  
+  // Pre-retirement and retirement years
+  for (let age = inputs.currentAge; age <= inputs.retirementAge + 30; age++) {
     // Calculate spouse's age in this year
     const spouseAge = hasSpouse ? inputs.spouseAge + (age - inputs.currentAge) : 0;
     
@@ -326,48 +441,69 @@ function generateIncomeSourcesData(inputs: CalculatorInputs) {
     let currentEmploymentIncome = 0;
     let currentRetirementIncome = 0;
     let currentSocialSecurityIncome = 0;
+    let currentRmdIncome = 0;
     
-    // Primary person's income
+    // Employment income
     if (age < inputs.retirementAge) {
       currentEmploymentIncome += employmentIncome;
-      employmentIncome *= (1 + inputs.incomeGrowthRate / 100); // Increase for next year
-    } else {
-      // After retirement
-      currentRetirementIncome += calculateRetirementWithdrawal(inputs, age - inputs.retirementAge);
-      
-      // Social security starts at SS start age
-      if (age >= inputs.ssStartAge) {
-        currentSocialSecurityIncome += inputs.socialSecurityBenefit * 12;
-      }
     }
     
     // Spouse's income if applicable
-    if (hasSpouse) {
-      if (spouseAge < inputs.spouseRetirementAge) {
-        currentEmploymentIncome += spouseIncome;
-        spouseIncome *= (1 + inputs.spouseIncomeGrowthRate / 100); // Increase for next year
-      } else if (spouseAge >= inputs.spouseRetirementAge) {
-        // After spouse retirement
-        // Spouse social security (simplified, assuming same start age)
-        if (spouseAge >= inputs.ssStartAge) {
-          currentSocialSecurityIncome += inputs.spouseSocialSecurityBenefit * 12;
-        }
+    if (hasSpouse && spouseAge < inputs.spouseRetirementAge) {
+      currentEmploymentIncome += spouseIncome;
+    }
+    
+    // Social security starts at SS start age
+    if (age >= inputs.ssStartAge) {
+      currentSocialSecurityIncome += inputs.socialSecurityBenefit * 12;
+      
+      if (hasSpouse && spouseAge >= inputs.ssStartAge) {
+        currentSocialSecurityIncome += inputs.spouseSocialSecurityBenefit * 12;
       }
     }
     
     // Pension income
     const pensionIncome = inputs.hasPension && age >= inputs.retirementAge ? inputs.pensionAmount : 0;
     
+    // For retirement years, calculate retirement withdrawals
+    if (age >= inputs.retirementAge) {
+      const fixedIncome = currentSocialSecurityIncome + pensionIncome;
+      let neededIncome = inputs.retirementAnnualSpending - fixedIncome;
+      
+      // Handle RMDs first (shown separately)
+      if (age >= rmdStartAge && traditionalRetirement > 0) {
+        const rmdDivisor = getRMDDivisor(age);
+        const rmdAmount = traditionalRetirement / rmdDivisor;
+        currentRmdIncome = rmdAmount;
+        
+        // Reduce needed income by RMD amount
+        neededIncome = Math.max(0, neededIncome - rmdAmount);
+        
+        // Update traditional retirement balance for next year
+        traditionalRetirement -= rmdAmount;
+      }
+      
+      // Additional retirement withdrawals (shown as retirement income)
+      if (neededIncome > 0) {
+        // First from taxable, then from traditional beyond RMD, then from Roth
+        const withdrawalAmount = Math.min(neededIncome, taxable + traditionalRetirement + rothRetirement);
+        currentRetirementIncome = withdrawalAmount;
+        
+        // This is simplified, in reality would track which accounts withdrawals come from
+      }
+    }
+    
     data.push({
       age,
       employment: Math.max(0, Math.round(currentEmploymentIncome)),
-      retirement: Math.max(0, Math.round(currentRetirementIncome)),
+      retirement: Math.max(0, Math.round(currentRetirementIncome)), 
       socialSecurity: Math.max(0, Math.round(currentSocialSecurityIncome)),
-      pension: Math.max(0, Math.round(pensionIncome))
+      pension: Math.max(0, Math.round(pensionIncome)),
+      rmd: Math.max(0, Math.round(currentRmdIncome))
     });
     
-    // Stop when both are retired for 20+ years
-    if (age >= inputs.retirementAge + 20 && (!hasSpouse || spouseAge >= inputs.spouseRetirementAge + 20)) {
+    // Stop when sufficient retirement years have been modeled
+    if (age >= inputs.retirementAge + 30 || age >= inputs.lifeExpectancy) {
       break;
     }
   }
@@ -425,14 +561,32 @@ function generateWithdrawalStrategyData(inputs: CalculatorInputs) {
   // Calculate total portfolio value at retirement
   const totalRetirementAssets = calculateTotalRetirementAssets(inputs);
   
+  // Split assets for more accurate RMD modeling
+  const traditionalIRA = inputs.retirementAccounts * 
+    Math.pow(1 + inputs.investmentReturnRate / 100, inputs.retirementAge - inputs.currentAge);
+  const rothIRA = inputs.rothAccounts * 
+    Math.pow(1 + inputs.investmentReturnRate / 100, inputs.retirementAge - inputs.currentAge);
+  const taxableAssets = totalRetirementAssets - traditionalIRA - rothIRA;
+  
+  const rmdStartAge = 73;
+  
   // Create data points for different withdrawal strategies
   for (let age = inputs.retirementAge; age <= inputs.lifeExpectancy; age++) {
     const yearsInRetirement = age - inputs.retirementAge;
     
-    // Calculate remaining portfolio value under different withdrawal rates
-    const conservative = totalRetirementAssets * Math.pow(1.07 - 0.03, yearsInRetirement); // 3% withdrawal with 7% growth
-    const moderate = totalRetirementAssets * Math.pow(1.07 - 0.04, yearsInRetirement); // 4% withdrawal
-    const aggressive = totalRetirementAssets * Math.pow(1.07 - 0.05, yearsInRetirement); // 5% withdrawal
+    // For RMD-adjusted strategies, calculate RMD first then supplement with additional withdrawals
+    let conservative = totalRetirementAssets * Math.pow(1.07 - 0.03, yearsInRetirement);
+    let moderate = totalRetirementAssets * Math.pow(1.07 - 0.04, yearsInRetirement);
+    let aggressive = totalRetirementAssets * Math.pow(1.07 - 0.05, yearsInRetirement);
+    
+    // Adjust for RMD impact - simplified illustration for the chart
+    if (age >= rmdStartAge) {
+      // Apply a small adjustment to show RMD impact on portfolio value
+      const rmdImpact = 0.005 * (age - rmdStartAge + 1); // Increases with age
+      conservative *= (1 - rmdImpact);
+      moderate *= (1 - rmdImpact);
+      aggressive *= (1 - rmdImpact);
+    }
     
     data.push({
       age,

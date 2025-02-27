@@ -17,6 +17,7 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
     socialSecurity: "#8b5cf6",
     retirement: "#ec4899",
     pension: "#10b981",
+    rmd: "#f59e0b", // Added color for RMDs
     grid: isDark ? "#333" : "#e5e5e5",
     text: isDark ? "#ccc" : "#666",
   }), [isDark]);
@@ -80,6 +81,14 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
           stroke={colors.retirement}
           fill={colors.retirement}
           name="Retirement Accounts"
+        />
+        <Area
+          type="monotone"
+          dataKey="rmd"
+          stackId="1"
+          stroke={colors.rmd}
+          fill={colors.rmd}
+          name="Required Minimum Distributions"
         />
         <Area
           type="monotone"
