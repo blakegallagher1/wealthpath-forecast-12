@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import InputForm from "./InputForm";
 import Results from "./Results";
+import PhoneVerification from "./PhoneVerification";
 import { calculatorDefaults } from "@/lib/calculator/defaults";
 import { calculateRetirementPlan } from "@/lib/calculator/calculations";
 import { CalculatorInputs, RetirementPlan } from "@/lib/calculator/types";
@@ -15,6 +16,7 @@ const Calculator = () => {
   const [inputs, setInputs] = useState<CalculatorInputs>(calculatorDefaults);
   const [results, setResults] = useState<RetirementPlan | null>(null);
   const [activeTab, setActiveTab] = useState("inputs");
+  const [isVerified, setIsVerified] = useState(false);
 
   const handleInputChange = (newInputs: Partial<CalculatorInputs>) => {
     setInputs((prev) => ({ ...prev, ...newInputs }));
@@ -47,6 +49,24 @@ const Calculator = () => {
       description: "All inputs have been reset to default values.",
     });
   };
+
+  const handleVerify = () => {
+    setIsVerified(true);
+  };
+
+  if (!isVerified) {
+    return (
+      <div className="w-full py-8">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-6">Retirement Calculator Access</h2>
+          <p className="text-center text-neutral-600 mb-8">
+            To ensure you're human and to prevent automated access, please verify your phone number.
+          </p>
+          <PhoneVerification onVerify={handleVerify} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
