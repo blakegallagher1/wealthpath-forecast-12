@@ -9,6 +9,11 @@ export function calculateRetirementPlan(inputs: CalculatorInputs): RetirementPla
   const yearsToRetirement = inputs.retirementAge - inputs.currentAge;
   const yearsInRetirement = inputs.lifeExpectancy - inputs.retirementAge;
   
+  // Also consider spouse retirement timing if applicable
+  const hasSpouse = inputs.spouseName.trim() !== "";
+  const spouseYearsToRetirement = hasSpouse ? inputs.spouseRetirementAge - inputs.spouseAge : 0;
+  const familyRetirementYear = Math.max(yearsToRetirement, spouseYearsToRetirement);
+  
   // Calculate retirement savings
   let retirementSavings = inputs.retirementAccounts + inputs.rothAccounts;
   let taxableInvestments = inputs.taxableInvestments;
@@ -36,7 +41,7 @@ export function calculateRetirementPlan(inputs: CalculatorInputs): RetirementPla
   // Calculate estimated retirement income
   const annualWithdrawal = totalRetirementSavings * (inputs.retirementWithdrawalRate / 100);
   const socialSecurityIncome = inputs.socialSecurityBenefit * 12;
-  const spouseSocialSecurityIncome = inputs.spouseSocialSecurityBenefit * 12;
+  const spouseSocialSecurityIncome = hasSpouse ? inputs.spouseSocialSecurityBenefit * 12 : 0;
   const pensionIncome = inputs.hasPension ? inputs.pensionAmount : 0;
   
   const estimatedAnnualRetirementIncome = annualWithdrawal + socialSecurityIncome + spouseSocialSecurityIncome + pensionIncome;
@@ -54,7 +59,7 @@ export function calculateRetirementPlan(inputs: CalculatorInputs): RetirementPla
     inputs.investmentReturnRate,
     inputs.inflationRate,
     inputs.socialSecurityBenefit,
-    inputs.spouseSocialSecurityBenefit,
+    hasSpouse ? inputs.spouseSocialSecurityBenefit : 0,
     inputs.hasPension ? inputs.pensionAmount : 0,
     inputs.retirementAge
   );
@@ -159,6 +164,7 @@ function generateRecommendations(
   portfolioLongevity: number
 ): string[] {
   const recommendations: string[] = [];
+  const hasSpouse = inputs.spouseName.trim() !== "";
   
   // Always provide recommendations based on the sustainability score
   if (sustainabilityScore >= 80) {
@@ -189,6 +195,18 @@ function generateRecommendations(
     }
   }
   
+  // Spouse-specific recommendations
+  if (hasSpouse) {
+    const retirementAgeDifference = Math.abs(inputs.retirementAge - inputs.spouseRetirementAge);
+    if (retirementAgeDifference > 3) {
+      recommendations.push(`Consider the financial impact of a ${retirementAgeDifference}-year difference in retirement timing between you and your spouse.`);
+    }
+    
+    if (inputs.spouseIncome > 0 && inputs.spouseSocialSecurityBenefit === 0) {
+      recommendations.push("Estimate your spouse's Social Security benefits to get a more accurate retirement projection.");
+    }
+  }
+  
   // Debt-related recommendations
   if (inputs.creditCardBalance > 0) {
     recommendations.push("Prioritize paying off high-interest credit card debt to improve your financial position.");
@@ -214,14 +232,19 @@ function generateRecommendations(
 
 function generateNetWorthData(inputs: CalculatorInputs) {
   const data = [];
+  const hasSpouse = inputs.spouseName.trim() !== "";
   
   let cash = inputs.cashSavings;
   let retirement = inputs.retirementAccounts + inputs.rothAccounts;
   let taxable = inputs.taxableInvestments;
   let realEstate = inputs.realEstateEquity;
   
-  // Pre-retirement
+  // Pre-retirement (using primary person's retirement age)
   for (let age = inputs.currentAge; age <= inputs.retirementAge; age++) {
+    // Check if spouse is still working (additional income)
+    const spouseAge = hasSpouse ? inputs.spouseAge + (age - inputs.currentAge) : 0;
+    const spouseIsWorking = hasSpouse && spouseAge < inputs.spouseRetirementAge;
+    
     // Add contributions
     retirement += inputs.annual401kContribution + inputs.annualRothContribution;
     taxable += inputs.annualTaxableContribution;
@@ -253,7 +276,7 @@ function generateNetWorthData(inputs: CalculatorInputs) {
     });
   }
   
-  // Post-retirement (5 years after retirement)
+  // Post-retirement (20 years after retirement)
   const withdrawalRate = inputs.retirementWithdrawalRate / 100;
   for (let age = inputs.retirementAge + 1; age <= inputs.retirementAge + 20; age++) {
     // Calculate withdrawal
@@ -289,51 +312,75 @@ function generateNetWorthData(inputs: CalculatorInputs) {
 
 function generateIncomeSourcesData(inputs: CalculatorInputs) {
   const data = [];
+  const hasSpouse = inputs.spouseName.trim() !== "";
   
-  let employmentIncome = inputs.annualIncome + inputs.spouseIncome;
+  let employmentIncome = inputs.annualIncome;
+  let spouseIncome = hasSpouse ? inputs.spouseIncome : 0;
   
   // Pre-retirement
-  for (let age = inputs.currentAge; age <= inputs.retirementAge; age++) {
+  for (let age = inputs.currentAge; age <= inputs.retirementAge + 20; age++) {
+    // Calculate spouse's age in this year
+    const spouseAge = hasSpouse ? inputs.spouseAge + (age - inputs.currentAge) : 0;
+    
+    // Determine employment income
+    let currentEmploymentIncome = 0;
+    let currentRetirementIncome = 0;
+    let currentSocialSecurityIncome = 0;
+    
+    // Primary person's income
+    if (age < inputs.retirementAge) {
+      currentEmploymentIncome += employmentIncome;
+      employmentIncome *= (1 + inputs.incomeGrowthRate / 100); // Increase for next year
+    } else {
+      // After retirement
+      currentRetirementIncome += calculateRetirementWithdrawal(inputs, age - inputs.retirementAge);
+      
+      // Social security starts at SS start age
+      if (age >= inputs.ssStartAge) {
+        currentSocialSecurityIncome += inputs.socialSecurityBenefit * 12;
+      }
+    }
+    
+    // Spouse's income if applicable
+    if (hasSpouse) {
+      if (spouseAge < inputs.spouseRetirementAge) {
+        currentEmploymentIncome += spouseIncome;
+        spouseIncome *= (1 + inputs.spouseIncomeGrowthRate / 100); // Increase for next year
+      } else if (spouseAge >= inputs.spouseRetirementAge) {
+        // After spouse retirement
+        // Spouse social security (simplified, assuming same start age)
+        if (spouseAge >= inputs.ssStartAge) {
+          currentSocialSecurityIncome += inputs.spouseSocialSecurityBenefit * 12;
+        }
+      }
+    }
+    
+    // Pension income
+    const pensionIncome = inputs.hasPension && age >= inputs.retirementAge ? inputs.pensionAmount : 0;
+    
     data.push({
       age,
-      employment: Math.round(employmentIncome),
-      retirement: 0,
-      socialSecurity: 0,
-      pension: 0
+      employment: Math.max(0, Math.round(currentEmploymentIncome)),
+      retirement: Math.max(0, Math.round(currentRetirementIncome)),
+      socialSecurity: Math.max(0, Math.round(currentSocialSecurityIncome)),
+      pension: Math.max(0, Math.round(pensionIncome))
     });
     
-    // Income growth
-    employmentIncome *= (1 + inputs.incomeGrowthRate / 100);
-  }
-  
-  // Calculate retirement income
-  const socialSecurityIncome = (inputs.socialSecurityBenefit + inputs.spouseSocialSecurityBenefit) * 12;
-  const pensionIncome = inputs.hasPension ? inputs.pensionAmount : 0;
-  
-  // Total retirement assets at retirement
-  const totalRetirementAssets = calculateTotalRetirementAssets(inputs);
-  
-  // Post-retirement
-  for (let age = inputs.retirementAge + 1; age <= inputs.retirementAge + 20; age++) {
-    const yearsInRetirement = age - inputs.retirementAge;
-    
-    // Social Security starts at SS start age
-    const currentSocialSecurity = age >= inputs.ssStartAge ? socialSecurityIncome : 0;
-    
-    // Calculate retirement withdrawals
-    const retirementWithdrawal = totalRetirementAssets * (inputs.retirementWithdrawalRate / 100) * 
-      Math.pow(1 - inputs.retirementWithdrawalRate / 100, yearsInRetirement - 1);
-    
-    data.push({
-      age,
-      employment: 0,
-      retirement: Math.round(retirementWithdrawal),
-      socialSecurity: Math.round(currentSocialSecurity),
-      pension: Math.round(pensionIncome)
-    });
+    // Stop when both are retired for 20+ years
+    if (age >= inputs.retirementAge + 20 && (!hasSpouse || spouseAge >= inputs.spouseRetirementAge + 20)) {
+      break;
+    }
   }
   
   return data;
+}
+
+function calculateRetirementWithdrawal(inputs: CalculatorInputs, yearsInRetirement: number) {
+  // Simple calculation for demo purposes
+  const totalRetirementAssets = calculateTotalRetirementAssets(inputs);
+  
+  return totalRetirementAssets * (inputs.retirementWithdrawalRate / 100) * 
+    Math.pow(1 - inputs.retirementWithdrawalRate / 200, yearsInRetirement); // Slowly decreasing withdrawals
 }
 
 function calculateTotalRetirementAssets(inputs: CalculatorInputs) {
@@ -423,10 +470,12 @@ function generateRiskProfileData(inputs: CalculatorInputs) {
     inputs.annualTaxableContribution;
   
   for (let age = inputs.currentAge; age <= inputs.currentAge + 30; age++) {
-    // Add annual contributions
-    conservativeValue += annualContribution;
-    moderateValue += annualContribution;
-    aggressiveValue += annualContribution;
+    // Add annual contributions (stop at retirement)
+    if (age < inputs.retirementAge) {
+      conservativeValue += annualContribution;
+      moderateValue += annualContribution;
+      aggressiveValue += annualContribution;
+    }
     
     // Apply returns
     conservativeValue *= (1 + conservativeReturn / 100);

@@ -5,6 +5,8 @@ export interface CalculatorInputs {
   spouseName: string;
   currentAge: number;
   retirementAge: number;
+  spouseAge: number;  // Added for spouse's age
+  spouseRetirementAge: number;  // Added for spouse's retirement age
   ssStartAge: number; // Social Security start age
   stateOfResidence: string;
   

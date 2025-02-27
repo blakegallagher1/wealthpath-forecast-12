@@ -83,7 +83,7 @@ const InputForm = ({ inputs, onChange }: InputFormProps) => {
               </div>
 
               <div>
-                <Label htmlFor="currentAge">Current Age</Label>
+                <Label htmlFor="currentAge">Your Current Age</Label>
                 <Input
                   id="currentAge"
                   type="number"
@@ -96,7 +96,21 @@ const InputForm = ({ inputs, onChange }: InputFormProps) => {
               </div>
 
               <div>
-                <Label htmlFor="retirementAge">Retirement Age</Label>
+                <Label htmlFor="spouseAge">Spouse Current Age</Label>
+                <Input
+                  id="spouseAge"
+                  type="number"
+                  min={18}
+                  max={100}
+                  value={inputs.spouseAge.toString()}
+                  onChange={(e) => handleNumberChange("spouseAge", e.target.value)}
+                  className="mt-1.5"
+                  disabled={!inputs.spouseName}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="retirementAge">Your Retirement Age</Label>
                 <Input
                   id="retirementAge"
                   type="number"
@@ -105,6 +119,20 @@ const InputForm = ({ inputs, onChange }: InputFormProps) => {
                   value={inputs.retirementAge.toString()}
                   onChange={(e) => handleNumberChange("retirementAge", e.target.value)}
                   className="mt-1.5"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="spouseRetirementAge">Spouse Retirement Age</Label>
+                <Input
+                  id="spouseRetirementAge"
+                  type="number"
+                  min={inputs.spouseAge + 1}
+                  max={100}
+                  value={inputs.spouseRetirementAge.toString()}
+                  onChange={(e) => handleNumberChange("spouseRetirementAge", e.target.value)}
+                  className="mt-1.5"
+                  disabled={!inputs.spouseName}
                 />
               </div>
 

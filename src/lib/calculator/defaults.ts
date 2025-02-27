@@ -7,6 +7,8 @@ export const calculatorDefaults: CalculatorInputs = {
   spouseName: "",
   currentAge: 35,
   retirementAge: 65,
+  spouseAge: 35,  // Default spouse age
+  spouseRetirementAge: 65,  // Default spouse retirement age
   ssStartAge: 67,
   stateOfResidence: "CA",
   
