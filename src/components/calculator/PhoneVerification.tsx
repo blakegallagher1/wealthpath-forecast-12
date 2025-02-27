@@ -59,7 +59,7 @@ const PhoneVerification = ({ onVerify }: PhoneVerificationProps) => {
       if (verificationCode === "123456") {
         toast({
           title: "Verification successful",
-          description: "You now have access to the retirement calculator.",
+          description: "Your retirement plan calculation is in progress.",
         });
         onVerify();
       } else {

@@ -17,12 +17,13 @@ const Calculator = () => {
   const [results, setResults] = useState<RetirementPlan | null>(null);
   const [activeTab, setActiveTab] = useState("inputs");
   const [isVerified, setIsVerified] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
 
   const handleInputChange = (newInputs: Partial<CalculatorInputs>) => {
     setInputs((prev) => ({ ...prev, ...newInputs }));
   };
 
-  const handleCalculate = () => {
+  const performCalculation = () => {
     try {
       const plan = calculateRetirementPlan(inputs);
       setResults(plan);
@@ -40,6 +41,14 @@ const Calculator = () => {
     }
   };
 
+  const handleCalculate = () => {
+    if (isVerified) {
+      performCalculation();
+    } else {
+      setShowVerification(true);
+    }
+  };
+
   const handleReset = () => {
     setInputs(calculatorDefaults);
     setResults(null);
@@ -52,21 +61,13 @@ const Calculator = () => {
 
   const handleVerify = () => {
     setIsVerified(true);
+    setShowVerification(false);
+    performCalculation();
   };
 
-  if (!isVerified) {
-    return (
-      <div className="w-full py-8">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-center mb-6">Retirement Calculator Access</h2>
-          <p className="text-center text-neutral-600 mb-8">
-            To ensure you're human and to prevent automated access, please verify your phone number.
-          </p>
-          <PhoneVerification onVerify={handleVerify} />
-        </div>
-      </div>
-    );
-  }
+  const handleCancelVerification = () => {
+    setShowVerification(false);
+  };
 
   return (
     <div className="w-full">
@@ -88,42 +89,66 @@ const Calculator = () => {
           
           <div className="p-6">
             <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, x: activeTab === "inputs" ? -20 : 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: activeTab === "inputs" ? 20 : -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <TabsContent value="inputs" className="mt-0">
-                  <InputForm inputs={inputs} onChange={handleInputChange} />
-                  <div className="mt-8 flex justify-end space-x-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={handleReset}
-                      className="px-6"
-                    >
-                      Reset
-                    </Button>
-                    <Button 
-                      onClick={handleCalculate}
-                      className="px-8"
-                    >
-                      Calculate
+              {showVerification ? (
+                <motion.div
+                  key="verification"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="py-4"
+                >
+                  <div className="mb-6">
+                    <h2 className="text-xl font-semibold text-center">One More Step</h2>
+                    <p className="text-center text-neutral-600 mt-2">
+                      Please verify your phone number to calculate your retirement plan.
+                    </p>
+                  </div>
+                  <PhoneVerification onVerify={handleVerify} />
+                  <div className="mt-6 text-center">
+                    <Button variant="link" onClick={handleCancelVerification}>
+                      Return to calculator
                     </Button>
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="results" className="mt-0">
-                  {results && (
-                    <Results 
-                      plan={results} 
-                      inputs={inputs} 
-                      onRecalculate={() => setActiveTab("inputs")} 
-                    />
-                  )}
-                </TabsContent>
-              </motion.div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, x: activeTab === "inputs" ? -20 : 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: activeTab === "inputs" ? 20 : -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <TabsContent value="inputs" className="mt-0">
+                    <InputForm inputs={inputs} onChange={handleInputChange} />
+                    <div className="mt-8 flex justify-end space-x-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={handleReset}
+                        className="px-6"
+                      >
+                        Reset
+                      </Button>
+                      <Button 
+                        onClick={handleCalculate}
+                        className="px-8"
+                      >
+                        Calculate
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="results" className="mt-0">
+                    {results && (
+                      <Results 
+                        plan={results} 
+                        inputs={inputs} 
+                        onRecalculate={() => setActiveTab("inputs")} 
+                      />
+                    )}
+                  </TabsContent>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </Tabs>
