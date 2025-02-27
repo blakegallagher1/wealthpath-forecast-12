@@ -76,7 +76,8 @@ export interface IncomeSourcesDataPoint {
   retirement: number;
   socialSecurity: number;
   pension: number;
-  rmd?: number; // Added for Required Minimum Distributions
+  rmd?: number; // Required Minimum Distributions
+  taxable?: number; // Income from taxable accounts
 }
 
 export interface SocialSecurityDataPoint {

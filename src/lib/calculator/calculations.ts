@@ -232,9 +232,9 @@ function generateRecommendations(
     recommendations.push(`Your portfolio may be depleted by age ${portfolioLongevity}, before your expected life expectancy of ${inputs.lifeExpectancy}.`);
   }
   
-  // Tax optimization
-  if (inputs.rothAccounts < inputs.retirementAccounts * 0.3) {
-    recommendations.push("Consider expanding your Roth investments to create tax diversification in retirement and reduce future RMD tax burdens.");
+  // Tax optimization - focus on taxable account drawdown strategy
+  if (inputs.retirementAccounts > 0) {
+    recommendations.push("For optimal tax efficiency, plan to exhaust taxable investments before tapping retirement accounts, while preserving Roth accounts for as long as possible (except when RMDs are required).");
   }
   
   return recommendations;
@@ -333,6 +333,10 @@ function generateNetWorthData(inputs: CalculatorInputs) {
       neededWithdrawal = Math.max(0, neededWithdrawal - rmdAmount);
     }
     
+    // IMPROVED WITHDRAWAL STRATEGY:
+    // Before RMD age, prioritize taxable accounts and preserve retirement accounts
+    // After RMD age, use RMDs first, then taxable, then additional traditional, then Roth
+    
     // Then withdraw from taxable accounts
     if (neededWithdrawal > 0 && taxable > 0) {
       taxableWithdrawal = Math.min(neededWithdrawal, taxable);
@@ -345,17 +349,37 @@ function generateNetWorthData(inputs: CalculatorInputs) {
       neededWithdrawal -= cashWithdrawal;
     }
     
-    // Then use additional traditional IRA funds if needed
-    if (neededWithdrawal > 0 && traditionalRetirement > traditionalWithdrawal) {
-      const additionalTraditionalWithdrawal = Math.min(neededWithdrawal, traditionalRetirement - traditionalWithdrawal);
-      traditionalWithdrawal += additionalTraditionalWithdrawal;
-      neededWithdrawal -= additionalTraditionalWithdrawal;
-    }
-    
-    // Last, use Roth if still needed
-    if (neededWithdrawal > 0 && rothRetirement > 0) {
-      rothWithdrawal = Math.min(neededWithdrawal, rothRetirement);
-      neededWithdrawal -= rothWithdrawal;
+    // If we're before RMD age, try to avoid touching retirement accounts unless absolutely necessary
+    if (age < rmdStartAge) {
+      // Only tap retirement accounts if taxable and cash are depleted
+      if (neededWithdrawal > 0) {
+        // Prefer traditional over Roth for early withdrawals
+        if (traditionalRetirement > 0) {
+          traditionalWithdrawal = Math.min(neededWithdrawal, traditionalRetirement);
+          neededWithdrawal -= traditionalWithdrawal;
+        }
+        
+        // Use Roth only as last resort
+        if (neededWithdrawal > 0 && rothRetirement > 0) {
+          rothWithdrawal = Math.min(neededWithdrawal, rothRetirement);
+          neededWithdrawal -= rothWithdrawal;
+        }
+      }
+    } else {
+      // After RMD age, we continue with the normal withdrawal hierarchy after taking RMDs
+      
+      // Use additional traditional IRA funds if needed
+      if (neededWithdrawal > 0 && traditionalRetirement > traditionalWithdrawal) {
+        const additionalTraditionalWithdrawal = Math.min(neededWithdrawal, traditionalRetirement - traditionalWithdrawal);
+        traditionalWithdrawal += additionalTraditionalWithdrawal;
+        neededWithdrawal -= additionalTraditionalWithdrawal;
+      }
+      
+      // Last, use Roth if still needed
+      if (neededWithdrawal > 0 && rothRetirement > 0) {
+        rothWithdrawal = Math.min(neededWithdrawal, rothRetirement);
+        neededWithdrawal -= rothWithdrawal;
+      }
     }
     
     // Apply withdrawals
@@ -407,6 +431,7 @@ function generateIncomeSourcesData(inputs: CalculatorInputs) {
   let traditionalRetirement = inputs.retirementAccounts;
   let rothRetirement = inputs.rothAccounts;
   let taxable = inputs.taxableInvestments;
+  let cash = inputs.cashSavings;
   let employmentIncome = inputs.annualIncome;
   let spouseIncome = hasSpouse ? inputs.spouseIncome : 0;
   
@@ -423,6 +448,7 @@ function generateIncomeSourcesData(inputs: CalculatorInputs) {
     traditionalRetirement *= (1 + inputs.investmentReturnRate / 100);
     rothRetirement *= (1 + inputs.investmentReturnRate / 100);
     taxable *= (1 + inputs.investmentReturnRate / 100);
+    cash *= (1 + (inputs.investmentReturnRate / 3) / 100);
     
     employmentIncome *= (1 + inputs.incomeGrowthRate / 100);
     if (hasSpouse) {
@@ -433,24 +459,27 @@ function generateIncomeSourcesData(inputs: CalculatorInputs) {
   const rmdStartAge = 73;
   
   // Pre-retirement and retirement years
-  for (let age = inputs.currentAge; age <= inputs.retirementAge + 30; age++) {
+  for (let age = inputs.currentAge; age <= Math.min(inputs.lifeExpectancy, inputs.retirementAge + 30); age++) {
     // Calculate spouse's age in this year
     const spouseAge = hasSpouse ? inputs.spouseAge + (age - inputs.currentAge) : 0;
     
     // Determine employment income
     let currentEmploymentIncome = 0;
     let currentRetirementIncome = 0;
+    let currentTaxableIncome = 0;
     let currentSocialSecurityIncome = 0;
     let currentRmdIncome = 0;
     
     // Employment income
     if (age < inputs.retirementAge) {
       currentEmploymentIncome += employmentIncome;
+      employmentIncome *= (1 + inputs.incomeGrowthRate / 100);
     }
     
     // Spouse's income if applicable
     if (hasSpouse && spouseAge < inputs.spouseRetirementAge) {
       currentEmploymentIncome += spouseIncome;
+      spouseIncome *= (1 + inputs.spouseIncomeGrowthRate / 100);
     }
     
     // Social security starts at SS start age
@@ -465,12 +494,12 @@ function generateIncomeSourcesData(inputs: CalculatorInputs) {
     // Pension income
     const pensionIncome = inputs.hasPension && age >= inputs.retirementAge ? inputs.pensionAmount : 0;
     
-    // For retirement years, calculate retirement withdrawals
+    // For retirement years, calculate withdrawals
     if (age >= inputs.retirementAge) {
       const fixedIncome = currentSocialSecurityIncome + pensionIncome;
       let neededIncome = inputs.retirementAnnualSpending - fixedIncome;
       
-      // Handle RMDs first (shown separately)
+      // RMDs first if applicable
       if (age >= rmdStartAge && traditionalRetirement > 0) {
         const rmdDivisor = getRMDDivisor(age);
         const rmdAmount = traditionalRetirement / rmdDivisor;
@@ -479,33 +508,86 @@ function generateIncomeSourcesData(inputs: CalculatorInputs) {
         // Reduce needed income by RMD amount
         neededIncome = Math.max(0, neededIncome - rmdAmount);
         
-        // Update traditional retirement balance for next year
+        // Update traditional retirement balance
         traditionalRetirement -= rmdAmount;
       }
       
-      // Additional retirement withdrawals (shown as retirement income)
+      // IMPROVED WITHDRAWAL STRATEGY FOR VISUALIZATION:
+      // Before RMD age, show income coming from taxable accounts first
+      // After RMD age, show RMDs separately, then other sources
+      
+      // If additional income is needed, draw from appropriate sources based on age
       if (neededIncome > 0) {
-        // First from taxable, then from traditional beyond RMD, then from Roth
-        const withdrawalAmount = Math.min(neededIncome, taxable + traditionalRetirement + rothRetirement);
-        currentRetirementIncome = withdrawalAmount;
-        
-        // This is simplified, in reality would track which accounts withdrawals come from
+        if (age < rmdStartAge) {
+          // Before RMD age, prioritize taxable accounts
+          if (taxable > 0) {
+            const taxableWithdrawal = Math.min(neededIncome, taxable);
+            currentTaxableIncome = taxableWithdrawal;
+            neededIncome -= taxableWithdrawal;
+            taxable -= taxableWithdrawal;
+          }
+          
+          // Only use retirement accounts if necessary
+          if (neededIncome > 0) {
+            currentRetirementIncome = neededIncome;
+            
+            // For accounting, we'd withdraw from traditional first
+            if (traditionalRetirement > 0) {
+              const traditionalWithdrawal = Math.min(neededIncome, traditionalRetirement);
+              traditionalRetirement -= traditionalWithdrawal;
+              neededIncome -= traditionalWithdrawal;
+            }
+            
+            // Then from Roth if still needed
+            if (neededIncome > 0 && rothRetirement > 0) {
+              const rothWithdrawal = Math.min(neededIncome, rothRetirement);
+              rothRetirement -= rothWithdrawal;
+            }
+          }
+        } else {
+          // After RMD age, continue with taxable, then additional traditional, then Roth
+          if (taxable > 0) {
+            const taxableWithdrawal = Math.min(neededIncome, taxable);
+            currentTaxableIncome = taxableWithdrawal;
+            neededIncome -= taxableWithdrawal;
+            taxable -= taxableWithdrawal;
+          }
+          
+          if (neededIncome > 0) {
+            currentRetirementIncome = neededIncome;
+            
+            // For accounting, we'd withdraw from remaining traditional first
+            if (traditionalRetirement > 0) {
+              const traditionalWithdrawal = Math.min(neededIncome, traditionalRetirement);
+              traditionalRetirement -= traditionalWithdrawal;
+              neededIncome -= traditionalWithdrawal;
+            }
+            
+            // Then from Roth if still needed
+            if (neededIncome > 0 && rothRetirement > 0) {
+              const rothWithdrawal = Math.min(neededIncome, rothRetirement);
+              rothRetirement -= rothWithdrawal;
+            }
+          }
+        }
       }
+      
+      // Apply growth to remaining balances
+      traditionalRetirement *= (1 + inputs.investmentReturnRate / 100);
+      rothRetirement *= (1 + inputs.investmentReturnRate / 100);
+      taxable *= (1 + inputs.investmentReturnRate / 100);
+      cash *= (1 + (inputs.investmentReturnRate / 3) / 100);
     }
     
     data.push({
       age,
       employment: Math.max(0, Math.round(currentEmploymentIncome)),
-      retirement: Math.max(0, Math.round(currentRetirementIncome)), 
+      retirement: Math.max(0, Math.round(currentRetirementIncome)),
+      taxable: Math.max(0, Math.round(currentTaxableIncome)),
       socialSecurity: Math.max(0, Math.round(currentSocialSecurityIncome)),
       pension: Math.max(0, Math.round(pensionIncome)),
       rmd: Math.max(0, Math.round(currentRmdIncome))
     });
-    
-    // Stop when sufficient retirement years have been modeled
-    if (age >= inputs.retirementAge + 30 || age >= inputs.lifeExpectancy) {
-      break;
-    }
   }
   
   return data;

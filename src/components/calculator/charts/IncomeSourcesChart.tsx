@@ -18,6 +18,7 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
     retirement: "#ec4899",
     pension: "#10b981",
     rmd: "#f59e0b", // Added color for RMDs
+    taxable: "#06b6d4", // Added color for taxable account withdrawals
     grid: isDark ? "#333" : "#e5e5e5",
     text: isDark ? "#ccc" : "#666",
   }), [isDark]);
@@ -76,11 +77,19 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
         />
         <Area
           type="monotone"
+          dataKey="taxable"
+          stackId="1"
+          stroke={colors.taxable}
+          fill={colors.taxable}
+          name="Taxable Account Withdrawals"
+        />
+        <Area
+          type="monotone"
           dataKey="retirement"
           stackId="1"
           stroke={colors.retirement}
           fill={colors.retirement}
-          name="Retirement Accounts"
+          name="Retirement Account Withdrawals"
         />
         <Area
           type="monotone"
