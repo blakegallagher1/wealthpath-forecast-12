@@ -32,7 +32,8 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
 
   // Calculate future value with a more realistic approach
   let projectedSavings = currentTotalSavings;
-  const safeReturnRate = Math.min(Math.max(0.01, investmentReturnRate), 0.12); // Cap between 1% and 12%
+  // Reduce max return rate from 12% to 8%
+  const safeReturnRate = Math.min(Math.max(0.01, investmentReturnRate), 0.08); // Cap between 1% and 8% 
   
   // Safe iterative approach for compound calculations
   for (let i = 0; i < yearsToRetirement; i++) {
@@ -43,8 +44,8 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
     projectedSavings += annualContributions;
     
     // Safety cap to prevent unrealistic values
-    if (projectedSavings > 50000000) { // Cap at $50M
-      projectedSavings = 50000000;
+    if (projectedSavings > 25000000) { // Cap at $25M instead of $50M
+      projectedSavings = 25000000;
       break;
     }
   }
@@ -181,11 +182,11 @@ function generateNetWorthData(inputs: CalculatorInputs): NetWorthDataPoint[] {
   let mortgageBalance = inputs.mortgageBalance || 0;
   let otherDebt = (inputs.creditCardBalance || 0) + (inputs.autoLoanBalance || 0) + (inputs.studentLoanBalance || 0);
   
-  // Growth rates with realistic caps
-  const cashGrowthRate = 0.02; // 2% for cash
-  const retirementGrowthRate = Math.min(inputs.investmentReturnRate || 0.07, 0.10); // Cap at 10%
-  const taxableGrowthRate = Math.min((inputs.investmentReturnRate || 0.07) * 0.85, 0.085); // Cap at 8.5% (lower due to taxes)
-  const realEstateGrowthRate = 0.03; // 3% for real estate, more conservative
+  // Growth rates with more conservative caps
+  const cashGrowthRate = 0.015; // 1.5% for cash (reduced from 2%)
+  const retirementGrowthRate = Math.min(inputs.investmentReturnRate || 0.07, 0.08); // Cap at 8% (reduced from 10%)
+  const taxableGrowthRate = Math.min((inputs.investmentReturnRate || 0.07) * 0.85, 0.065); // Cap at 6.5% (reduced from 8.5%)
+  const realEstateGrowthRate = 0.025; // 2.5% for real estate (reduced from 3%)
   
   // Annual contributions
   const retirementContribution = (inputs.annual401kContribution || 0) + (inputs.annualRothContribution || 0);
@@ -219,13 +220,13 @@ function generateNetWorthData(inputs: CalculatorInputs): NetWorthDataPoint[] {
     if (age < retirementAge) {
       // Pre-retirement: growth with contributions
       cash = Math.min(cash * (1 + cashGrowthRate) + (inputs.annualIncome || 0) * 0.03, 500000); // Cap cash at $500K
-      retirement = Math.min(retirement * (1 + retirementGrowthRate) + retirementContribution, 10000000); // Cap at $10M
-      taxable = Math.min(taxable * (1 + taxableGrowthRate) + taxableContribution, 10000000); // Cap at $10M
-      realEstate = Math.min(realEstate * (1 + realEstateGrowthRate), 5000000); // Cap at $5M
+      retirement = Math.min(retirement * (1 + retirementGrowthRate) + retirementContribution, 8000000); // Cap at $8M (reduced from $10M)
+      taxable = Math.min(taxable * (1 + taxableGrowthRate) + taxableContribution, 8000000); // Cap at $8M (reduced from $10M)
+      realEstate = Math.min(realEstate * (1 + realEstateGrowthRate), 4000000); // Cap at $4M (reduced from $5M)
     } else {
       // Post-retirement: withdrawals
       const totalAssets = cash + retirement + taxable + realEstate;
-      const annualWithdrawal = Math.min(totalAssets * retirementSpendingRate, 500000); // Cap at $500K/year
+      const annualWithdrawal = Math.min(totalAssets * retirementSpendingRate, 400000); // Cap at $400K/year (reduced from $500K)
       const withdrawalPerAccount = annualWithdrawal / 4; // Distribute across accounts
       
       // Reduce each account proportionally, but ensure we don't go negative
@@ -261,8 +262,8 @@ function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourcesDataP
   const lifeExpectancy = inputs.lifeExpectancy || 90;
   const ssStartAge = inputs.ssStartAge || 67;
   
-  // Income growth rate with realistic cap
-  const incomeGrowthRate = Math.min(inputs.incomeGrowthRate || 0.03, 0.05); // Cap at 5%
+  // Income growth rate with more conservative cap
+  const incomeGrowthRate = Math.min(inputs.incomeGrowthRate || 0.03, 0.04); // Cap at 4% (reduced from 5%)
   
   for (let age = currentAge; age <= lifeExpectancy; age++) {
     const year = new Date().getFullYear() + (age - currentAge);
@@ -279,13 +280,13 @@ function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourcesDataP
       // Pre-retirement: employment income with growth
       const yearsWorking = age - currentAge;
       employment = (inputs.annualIncome || 0) * Math.pow(1 + incomeGrowthRate, yearsWorking);
-      employment = Math.min(employment, 500000); // Cap at $500K
+      employment = Math.min(employment, 400000); // Cap at $400K (reduced from $500K)
       
       // Add spouse income if applicable
       if (inputs.spouseIncome && inputs.spouseIncome > 0 && inputs.spouseAge) {
-        const spouseIncomeGrowthRate = Math.min(inputs.spouseIncomeGrowthRate || 0.03, 0.05);
+        const spouseIncomeGrowthRate = Math.min(inputs.spouseIncomeGrowthRate || 0.03, 0.04);
         const spouseIncome = inputs.spouseIncome * Math.pow(1 + spouseIncomeGrowthRate, yearsWorking);
-        employment += Math.min(spouseIncome, 500000);
+        employment += Math.min(spouseIncome, 400000);
       }
     } else {
       // Post-retirement income sources
@@ -293,18 +294,18 @@ function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourcesDataP
       // Social Security (starts at SS age)
       if (age >= ssStartAge) {
         // Base Social Security on income, with reasonable min/max
-        const baseSS = inputs.socialSecurityBenefit || Math.min(Math.max((inputs.annualIncome || 0) * 0.4, 15000), 50000);
-        socialSecurity = Math.min(baseSS, 60000); // Cap at $60K
+        const baseSS = inputs.socialSecurityBenefit || Math.min(Math.max((inputs.annualIncome || 0) * 0.35, 15000), 40000); // Reduced from 0.4, max $40K
+        socialSecurity = Math.min(baseSS, 50000); // Cap at $50K (reduced from $60K)
         
         // Add spouse SS if applicable
         if (inputs.spouseSocialSecurityBenefit && inputs.spouseSocialSecurityBenefit > 0) {
-          socialSecurity += Math.min(inputs.spouseSocialSecurityBenefit, 50000);
+          socialSecurity += Math.min(inputs.spouseSocialSecurityBenefit, 40000); // Reduced from $50K
         }
       }
       
       // Pension income if applicable
       if (inputs.hasPension) {
-        pension = Math.min(inputs.pensionAmount || 0, 150000); // Cap at $150K
+        pension = Math.min(inputs.pensionAmount || 0, 120000); // Cap at $120K (reduced from $150K)
       }
       
       // Calculate retirement withdrawals
@@ -315,16 +316,16 @@ function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourcesDataP
       
       // Project asset growth
       const growthYears = retirementAge - currentAge;
-      const growthRate = Math.min(inputs.investmentReturnRate || 0.07, 0.09);
+      const growthRate = Math.min(inputs.investmentReturnRate || 0.07, 0.07); // Cap at 7% (reduced from 9%)
       const projectedAssets = totalAssets * Math.pow(1 + growthRate, growthYears);
       
       // Annual withdrawals (4% rule)
-      const annualWithdrawal = Math.min(projectedAssets * 0.04, 500000); // Cap at $500K/year
+      const annualWithdrawal = Math.min(projectedAssets * 0.04, 400000); // Cap at $400K/year (reduced from $500K)
       
       // Required Minimum Distributions after age 72
       if (age >= 72) {
         const rmdPercentage = 0.04 + (age - 72) * 0.001; // Increases with age
-        rmd = Math.min(projectedAssets * rmdPercentage * 0.7, 200000); // Cap at $200K
+        rmd = Math.min(projectedAssets * rmdPercentage * 0.7, 150000); // Cap at $150K (reduced from $200K)
         
         // Remaining withdrawals
         const remainingNeed = Math.max(0, annualWithdrawal - rmd - socialSecurity - pension);
@@ -373,19 +374,19 @@ function generateWithdrawalStrategyData(inputs: CalculatorInputs): WithdrawalStr
                             (inputs.annualTaxableContribution || 0);
   
   const yearsToRetirement = Math.max(0, retirementAge - currentAge);
-  const returnRate = Math.min(inputs.investmentReturnRate || 0.07, 0.09); // Cap at 9%
+  const returnRate = Math.min(inputs.investmentReturnRate || 0.07, 0.07); // Cap at 7% (reduced from 9%)
   
   // Project savings to retirement with a more conservative approach
   for (let i = 0; i < yearsToRetirement; i++) {
     estimatedRetirementSavings = estimatedRetirementSavings * (1 + returnRate) + annualContributions;
-    if (estimatedRetirementSavings > 10000000) { // Cap at $10M
-      estimatedRetirementSavings = 10000000;
+    if (estimatedRetirementSavings > 8000000) { // Cap at $8M (reduced from $10M)
+      estimatedRetirementSavings = 8000000;
       break;
     }
   }
   
   // Cap estimated retirement savings
-  estimatedRetirementSavings = Math.min(estimatedRetirementSavings, 10000000);
+  estimatedRetirementSavings = Math.min(estimatedRetirementSavings, 8000000); // Reduced from $10M
   
   // Withdrawal rates
   const conservativeRate = 0.03; // 3% withdrawal
@@ -425,9 +426,9 @@ function generateWithdrawalStrategyData(inputs: CalculatorInputs): WithdrawalStr
       aggressiveBalance = aggressiveBalance * (1 + returnRate) + annualContributions;
       
       // Apply safety caps
-      conservativeBalance = Math.min(conservativeBalance, 10000000);
-      moderateBalance = Math.min(moderateBalance, 10000000);
-      aggressiveBalance = Math.min(aggressiveBalance, 10000000);
+      conservativeBalance = Math.min(conservativeBalance, 8000000); // Reduced from $10M
+      moderateBalance = Math.min(moderateBalance, 8000000); // Reduced from $10M
+      aggressiveBalance = Math.min(aggressiveBalance, 8000000); // Reduced from $10M
     }
     
     data.push({
@@ -452,24 +453,24 @@ function generateRiskProfileData(inputs: CalculatorInputs): RiskProfileDataPoint
   // Total current investments
   const totalInvestments = Math.min(
     (inputs.retirementAccounts || 0) + (inputs.rothAccounts || 0) + (inputs.taxableInvestments || 0),
-    10000000 // Cap at $10M
+    8000000 // Cap at $8M (reduced from $10M)
   );
   
   // Annual contributions
   const annualContributions = Math.min(
     (inputs.annual401kContribution || 0) + (inputs.annualRothContribution || 0) + (inputs.annualTaxableContribution || 0),
-    100000 // Cap at $100K/year
+    80000 // Cap at $80K/year (reduced from $100K)
   );
   
-  // Risk profiles with realistic return rates
+  // Risk profiles with more conservative return rates
   let conservative = totalInvestments;
   let moderate = totalInvestments;
   let aggressive = totalInvestments;
   
-  // Return rates by risk profile
-  const conservativeReturnRate = 0.05; // 5% return
-  const moderateReturnRate = 0.07;     // 7% return
-  const aggressiveReturnRate = 0.09;   // 9% return
+  // Return rates by risk profile - more conservative
+  const conservativeReturnRate = 0.04; // 4% return (reduced from 5%)
+  const moderateReturnRate = 0.06;     // 6% return (reduced from 7%)
+  const aggressiveReturnRate = 0.08;   // 8% return (reduced from 9%)
   
   // Withdrawal rate in retirement
   const withdrawalRate = 0.04; // 4% withdrawal rate
@@ -491,9 +492,9 @@ function generateRiskProfileData(inputs: CalculatorInputs): RiskProfileDataPoint
     }
     
     // Apply safety caps
-    conservative = Math.min(conservative, 10000000);
-    moderate = Math.min(moderate, 10000000);
-    aggressive = Math.min(aggressive, 10000000);
+    conservative = Math.min(conservative, 8000000); // Reduced from $10M
+    moderate = Math.min(moderate, 8000000); // Reduced from $10M
+    aggressive = Math.min(aggressive, 8000000); // Reduced from $10M
     
     data.push({
       age,
@@ -511,8 +512,8 @@ function generateRiskProfileData(inputs: CalculatorInputs): RiskProfileDataPoint
 function generateSocialSecurityData(inputs: CalculatorInputs): SocialSecurityDataPoint[] {
   // Base monthly amount (estimated based on income)
   const baseMonthlyBenefit = Math.min(
-    (inputs.socialSecurityBenefit || ((inputs.annualIncome || 0) * 0.4)) / 12,
-    4000 // Cap at $4K/month
+    (inputs.socialSecurityBenefit || ((inputs.annualIncome || 0) * 0.35)) / 12, // Reduced from 0.4
+    3500 // Cap at $3.5K/month (reduced from $4K)
   );
   
   // Life expectancy after age 62
