@@ -1,10 +1,10 @@
 
-import { CalculatorInputs } from "./types";
+import { CalculatorInputs, NetWorthDataPoint } from "./types";
 
 export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventImpact: number) => {
   const currentYear = new Date().getFullYear();
   const projectionYears = Math.max(inputs.lifeExpectancy - inputs.currentAge, 50);
-  const data = [];
+  const data: NetWorthDataPoint[] = [];
   
   // Initial values
   let age = inputs.currentAge;
@@ -33,13 +33,16 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
     const currentNetWorth = cashSavings + retirementAccounts + rothAccounts + taxableInvestments + realEstateEquity - mortgageBalance - otherDebts;
     const projectedYear = currentYear + year;
     
+    // Format the data to match NetWorthDataPoint requirements
     data.push({
       age,
       year: projectedYear,
-      netWorth: Math.max(0, currentNetWorth),
-      assets: cashSavings + retirementAccounts + rothAccounts + taxableInvestments + realEstateEquity,
-      liabilities: mortgageBalance + otherDebts,
-      isRetired: age >= inputs.retirementAge,
+      cash: cashSavings,
+      retirement: retirementAccounts + rothAccounts,
+      taxable: taxableInvestments,
+      realEstate: realEstateEquity,
+      total: Math.max(0, currentNetWorth),
+      isRetirementAge: age === inputs.retirementAge,
     });
     
     // Handle life events
