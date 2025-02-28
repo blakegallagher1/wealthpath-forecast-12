@@ -1,6 +1,6 @@
 
 import { useMemo } from "react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from "recharts";
 import { useTheme } from "@/hooks/use-theme";
 import { IncomeSourcesDataPoint } from "@/lib/calculator/types";
 
@@ -22,6 +22,9 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
     grid: isDark ? "#333" : "#e5e5e5",
     text: isDark ? "#ccc" : "#666",
   }), [isDark]);
+
+  // Find retirement age in data for reference line
+  const retirementAge = data.find(d => d.isRetirementAge)?.age;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -115,6 +118,21 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
           fill={colors.pension}
           name="Pension"
         />
+        
+        {retirementAge && (
+          <ReferenceLine 
+            x={retirementAge} 
+            stroke="#ff4500" 
+            strokeWidth={2} 
+            strokeDasharray="5 5"
+            label={{
+              value: "Retirement Age",
+              position: "top",
+              fill: colors.text,
+              fontSize: 12
+            }}
+          />
+        )}
       </AreaChart>
     </ResponsiveContainer>
   );

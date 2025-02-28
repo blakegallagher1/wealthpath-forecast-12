@@ -9,7 +9,13 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
   const ssStartAge = inputs.ssStartAge || 67;
   
   // Income growth rate with more conservative cap
-  const incomeGrowthRate = Math.min(inputs.incomeGrowthRate || 0.03, 0.04); // Cap at 4% (reduced from 5%)
+  const incomeGrowthRate = Math.min(inputs.incomeGrowthRate || 0.03, 0.04); // Cap at 4%
+  
+  // Calculate retirement savings at retirement age (simplified)
+  const retirementSavingsAtRetirement = calculateProjectedRetirementSavings(inputs);
+  
+  // Withdrawal rate from retirement plan
+  const withdrawalRate = inputs.retirementWithdrawalRate / 100 || 0.04; // Default to 4%
   
   for (let age = currentAge; age <= lifeExpectancy; age++) {
     const year = new Date().getFullYear() + (age - currentAge);
@@ -26,7 +32,7 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
       // Pre-retirement: employment income with growth
       const yearsWorking = age - currentAge;
       employment = (inputs.annualIncome || 0) * Math.pow(1 + incomeGrowthRate, yearsWorking);
-      employment = Math.min(employment, 400000); // Cap at $400K (reduced from $500K)
+      employment = Math.min(employment, 400000); // Cap at $400K
       
       // Add spouse income if applicable
       if (inputs.spouseIncome && inputs.spouseIncome > 0 && inputs.spouseAge) {
@@ -39,49 +45,42 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
       
       // Social Security (starts at SS age)
       if (age >= ssStartAge) {
-        // Base Social Security on income, with reasonable min/max
-        const baseSS = inputs.socialSecurityBenefit || Math.min(Math.max((inputs.annualIncome || 0) * 0.35, 15000), 40000); // Reduced from 0.4, max $40K
-        socialSecurity = Math.min(baseSS, 50000); // Cap at $50K (reduced from $60K)
+        // Base Social Security on income or specified benefit
+        socialSecurity = inputs.socialSecurityBenefit || 0;
         
         // Add spouse SS if applicable
         if (inputs.spouseSocialSecurityBenefit && inputs.spouseSocialSecurityBenefit > 0) {
-          socialSecurity += Math.min(inputs.spouseSocialSecurityBenefit, 40000); // Reduced from $50K
+          socialSecurity += inputs.spouseSocialSecurityBenefit;
         }
       }
       
       // Pension income if applicable
       if (inputs.hasPension) {
-        pension = Math.min(inputs.pensionAmount || 0, 120000); // Cap at $120K (reduced from $150K)
+        pension = inputs.pensionAmount || 0;
       }
       
-      // Calculate retirement withdrawals
-      const totalAssets = 
-        (inputs.retirementAccounts || 0) + 
-        (inputs.rothAccounts || 0) + 
-        (inputs.taxableInvestments || 0);
+      // For retirement savings, calculate withdrawals based on the projected savings
+      // This should align with the calculations in calculateRetirementPlan
+      const yearsIntoRetirement = age - retirementAge;
       
-      // Project asset growth
-      const growthYears = retirementAge - currentAge;
-      const growthRate = Math.min(inputs.investmentReturnRate || 0.07, 0.07); // Cap at 7% (reduced from 9%)
-      const projectedAssets = totalAssets * Math.pow(1 + growthRate, growthYears);
-      
-      // Annual withdrawals (4% rule)
-      const annualWithdrawal = Math.min(projectedAssets * 0.04, 400000); // Cap at $400K/year (reduced from $500K)
+      // Adjusting for inflation erosion in a simplified way
+      const inflationAdjustment = Math.pow(1 - (inputs.inflationRate / 100 || 0.02), yearsIntoRetirement);
+      const baseWithdrawalThisYear = retirementSavingsAtRetirement * withdrawalRate * inflationAdjustment;
       
       // Required Minimum Distributions after age 72
       if (age >= 72) {
-        const rmdPercentage = 0.04 + (age - 72) * 0.001; // Increases with age
-        rmd = Math.min(projectedAssets * rmdPercentage * 0.7, 150000); // Cap at $150K (reduced from $200K)
+        const rmdPercentage = 0.036 + ((age - 72) * 0.002); // Simplified RMD schedule
+        const retirementAccountsAtAge = retirementSavingsAtRetirement * 0.7 * Math.pow(1 - withdrawalRate, yearsIntoRetirement);
+        rmd = retirementAccountsAtAge * rmdPercentage;
         
-        // Remaining withdrawals
-        const remainingNeed = Math.max(0, annualWithdrawal - rmd - socialSecurity - pension);
+        // Remaining withdrawals come from retirement and taxable
+        const remainingNeed = Math.max(0, baseWithdrawalThisYear - rmd);
         retirement = remainingNeed * 0.6;
         taxable = remainingNeed * 0.4;
       } else {
         // Before RMDs
-        const withdrawalNeeded = Math.max(0, annualWithdrawal - socialSecurity - pension);
-        retirement = withdrawalNeeded * 0.6;
-        taxable = withdrawalNeeded * 0.4;
+        retirement = baseWithdrawalThisYear * 0.6;
+        taxable = baseWithdrawalThisYear * 0.4;
       }
     }
     
@@ -102,4 +101,37 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
   }
   
   return data;
+}
+
+// Helper function to calculate projected retirement savings
+function calculateProjectedRetirementSavings(inputs: CalculatorInputs): number {
+  const yearsUntilRetirement = inputs.retirementAge - inputs.currentAge;
+  
+  // Current retirement assets
+  const currentRetirementAssets = 
+    (inputs.retirementAccounts || 0) + 
+    (inputs.rothAccounts || 0) + 
+    (inputs.taxableInvestments || 0);
+  
+  // Annual contributions
+  const annualContributions = 
+    (inputs.annual401kContribution || 0) + 
+    (inputs.annualRothContribution || 0) + 
+    (inputs.annualTaxableContribution || 0);
+  
+  // Investment return rate
+  const returnRate = inputs.investmentReturnRate / 100 || 0.07;
+  
+  // Calculate future value using compound interest formula
+  // FV = P(1+r)^n + PMT * (((1+r)^n - 1) / r)
+  let futureValue = 0;
+  
+  if (returnRate > 0) {
+    futureValue = currentRetirementAssets * Math.pow(1 + returnRate, yearsUntilRetirement) + 
+                 annualContributions * ((Math.pow(1 + returnRate, yearsUntilRetirement) - 1) / returnRate);
+  } else {
+    futureValue = currentRetirementAssets + (annualContributions * yearsUntilRetirement);
+  }
+  
+  return futureValue;
 }
