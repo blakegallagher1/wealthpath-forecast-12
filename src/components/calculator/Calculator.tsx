@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,21 @@ import { calculateRetirementPlan } from "@/lib/calculator/calculations";
 import { CalculatorInputs, RetirementPlan } from "@/lib/calculator/types";
 import { toast } from "@/components/ui/use-toast";
 
-const Calculator = () => {
-  const [inputs, setInputs] = useState<CalculatorInputs>(calculatorDefaults);
+interface CalculatorProps {
+  initialInputs?: CalculatorInputs;
+}
+
+const Calculator = ({ initialInputs = calculatorDefaults }: CalculatorProps) => {
+  const [inputs, setInputs] = useState<CalculatorInputs>(initialInputs);
   const [results, setResults] = useState<RetirementPlan | null>(null);
   const [activeTab, setActiveTab] = useState("inputs");
   const [isVerified, setIsVerified] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
+
+  // Update inputs when initialInputs changes (e.g., when test data is loaded)
+  useEffect(() => {
+    setInputs(initialInputs);
+  }, [initialInputs]);
 
   const handleInputChange = (newInputs: Partial<CalculatorInputs>) => {
     setInputs((prev) => ({ ...prev, ...newInputs }));
