@@ -21,6 +21,29 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
     text: isDark ? "#ccc" : "#666",
   }), [isDark]);
 
+  // Normalize data to prevent unrealistic projections
+  const normalizedData = useMemo(() => {
+    return data.map(point => {
+      // Apply reasonable caps to each asset type
+      const normalizedCash = Math.min(point.cash, 1000000); // Cap cash at $1M
+      const normalizedRetirement = Math.min(point.retirement, 10000000); // Cap retirement at $10M
+      const normalizedTaxable = Math.min(point.taxable, 5000000); // Cap taxable at $5M
+      const normalizedRealEstate = Math.min(point.realEstate, 8000000); // Cap real estate at $8M
+      
+      // Recalculate total with normalized values
+      const normalizedTotal = normalizedCash + normalizedRetirement + normalizedTaxable + normalizedRealEstate;
+      
+      return {
+        ...point,
+        cash: normalizedCash,
+        retirement: normalizedRetirement,
+        taxable: normalizedTaxable,
+        realEstate: normalizedRealEstate,
+        total: normalizedTotal
+      };
+    });
+  }, [data]);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -31,12 +54,12 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
   };
 
   // Find the retirement age point for reference line
-  const retirementPoint = data.find(point => point.isRetirementAge);
+  const retirementPoint = normalizedData.find(point => point.isRetirementAge);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart
-        data={data}
+        data={normalizedData}
         margin={{
           top: 10,
           right: 30,
@@ -56,6 +79,7 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
           tick={{ fill: colors.text, fontSize: 12 }}
+          domain={[0, 'auto']}
         />
         <Tooltip
           formatter={(value: number) => [formatCurrency(value), ""]}
