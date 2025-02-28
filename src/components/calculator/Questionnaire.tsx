@@ -273,7 +273,7 @@ const Questionnaire = ({ onComplete, onCancel, initialInputs }: QuestionnairePro
           </div>
           <div className="flex items-center space-x-2 border rounded-md p-4 hover:bg-muted">
             <RadioGroupItem value="below-average" id="below-average" />
-            <Label htmlFor="below-average" className="flex-1 cursor-pointer">Below average (<600)</Label>
+            <Label htmlFor="below-average" className="flex-1 cursor-pointer">Below average (&lt;600)</Label>
           </div>
           <div className="flex items-center space-x-2 border rounded-md p-4 hover:bg-muted">
             <RadioGroupItem value="unknown" id="unknown" />
