@@ -37,11 +37,18 @@ const RetirementSummary = ({ plan, inputs }: RetirementSummaryProps) => {
 
   const status = getStatusDetails();
   
-  const formattedRetirementSavings = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(plan.totalRetirementSavings);
+  // Format numbers in a more controlled way
+  const formatCurrency = (amount: number) => {
+    if (amount >= 1000000000) {
+      return `$${(amount / 1000000000).toFixed(1)}B`;
+    } else if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(1)}K`;
+    } else {
+      return `$${amount.toFixed(0)}`;
+    }
+  };
 
   const yearsToRetirement = inputs.retirementAge - inputs.currentAge;
 
@@ -72,7 +79,7 @@ const RetirementSummary = ({ plan, inputs }: RetirementSummaryProps) => {
           className="bg-white p-6 rounded-xl border border-neutral-200 shadow-sm"
         >
           <div className="text-sm text-neutral-500 uppercase tracking-wider">Estimated at Retirement</div>
-          <div className="text-3xl font-medium mt-2">{formattedRetirementSavings}</div>
+          <div className="text-3xl font-medium mt-2">{formatCurrency(plan.totalRetirementSavings)}</div>
           <div className="text-sm text-neutral-600 mt-1">in {yearsToRetirement} years at age {inputs.retirementAge}</div>
         </motion.div>
 
@@ -83,7 +90,7 @@ const RetirementSummary = ({ plan, inputs }: RetirementSummaryProps) => {
           className="bg-white p-6 rounded-xl border border-neutral-200 shadow-sm"
         >
           <div className="text-sm text-neutral-500 uppercase tracking-wider">Retirement Income</div>
-          <div className="text-3xl font-medium mt-2">${new Intl.NumberFormat("en-US").format(Math.round(plan.estimatedAnnualRetirementIncome))}</div>
+          <div className="text-3xl font-medium mt-2">{formatCurrency(plan.estimatedAnnualRetirementIncome)}</div>
           <div className="text-sm text-neutral-600 mt-1">estimated annual retirement income</div>
         </motion.div>
 

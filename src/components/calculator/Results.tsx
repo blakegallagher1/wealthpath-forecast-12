@@ -26,6 +26,19 @@ const Results = ({ plan, inputs, onRecalculate }: ResultsProps) => {
     alert("This feature would email the results to your financial advisor.");
   };
 
+  // Format numbers in a more controlled way
+  const formatCurrency = (amount: number) => {
+    if (amount >= 1000000000) {
+      return `$${(amount / 1000000000).toFixed(1)}B`;
+    } else if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(1)}K`;
+    } else {
+      return `$${amount.toFixed(0)}`;
+    }
+  };
+
   return (
     <div className="space-y-8">
       <motion.div
@@ -70,12 +83,12 @@ const Results = ({ plan, inputs, onRecalculate }: ResultsProps) => {
                     />
                     <InfoCard 
                       title="Retirement Savings" 
-                      value={`$${formatNumber(plan.totalRetirementSavings)}`} 
+                      value={formatCurrency(plan.totalRetirementSavings)} 
                       description="Projected savings at retirement"
                     />
                     <InfoCard 
                       title="Retirement Income" 
-                      value={`$${formatNumber(plan.estimatedAnnualRetirementIncome)}`} 
+                      value={formatCurrency(plan.estimatedAnnualRetirementIncome)} 
                       description="Estimated annual income in retirement"
                     />
                     <InfoCard 
@@ -226,12 +239,6 @@ const InfoCard = ({ title, value, description, emphasis }: InfoCardProps) => {
       <div className="text-xs text-neutral-500 mt-1">{description}</div>
     </div>
   );
-};
-
-const formatNumber = (num: number): string => {
-  return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 0
-  }).format(num);
 };
 
 export default Results;
