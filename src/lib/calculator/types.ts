@@ -1,4 +1,3 @@
-
 export interface CalculatorInputs {
   // Personal details
   name: string;
@@ -68,16 +67,17 @@ export interface NetWorthDataPoint {
   retirement: number;
   taxable: number;
   realEstate: number;
+  total: number;
 }
 
 export interface IncomeSourcesDataPoint {
   age: number;
   employment: number;
-  retirement: number;
   socialSecurity: number;
+  retirement: number;
   pension: number;
-  rmd?: number; // Required Minimum Distributions
-  taxable?: number; // Income from taxable accounts
+  rmd: number;
+  taxable: number;
 }
 
 export interface SocialSecurityDataPoint {
@@ -87,9 +87,9 @@ export interface SocialSecurityDataPoint {
 
 export interface WithdrawalStrategyDataPoint {
   age: number;
-  conservative: number; // 3% withdrawal
-  moderate: number;     // 4% withdrawal
-  aggressive: number;   // 5% withdrawal
+  conservative: number;
+  moderate: number;
+  aggressive: number;
 }
 
 export interface RiskProfileDataPoint {
@@ -110,9 +110,9 @@ export interface RetirementPlan {
   // Chart data
   netWorthData: NetWorthDataPoint[];
   incomeSourcesData: IncomeSourcesDataPoint[];
-  socialSecurityData: SocialSecurityDataPoint[];
   withdrawalStrategyData: WithdrawalStrategyDataPoint[];
   riskProfileData: RiskProfileDataPoint[];
+  socialSecurityData: SocialSecurityDataPoint[];
   
   // Recommendations
   recommendations: string[];
