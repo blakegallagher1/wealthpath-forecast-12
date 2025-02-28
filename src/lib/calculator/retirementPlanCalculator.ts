@@ -137,6 +137,7 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
   }
 
   // Generate chart data
+  // Fix: Passing both inputs and lifeEventImpact to calculateNetWorthProjection
   const netWorthData = calculateNetWorthProjection(inputs, lifeEventImpact);
   const incomeSourcesData = generateIncomeSourcesData(inputs);
   const withdrawalStrategyData = generateWithdrawalStrategyData(inputs);
