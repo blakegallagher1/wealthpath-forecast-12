@@ -1,4 +1,4 @@
-<lov-code>
+
 import { CalculatorInputs, RetirementPlan } from "./types";
 
 export function calculateRetirementPlan(inputs: CalculatorInputs): RetirementPlan {
@@ -777,3 +777,148 @@ function generateIncomeSourcesData(inputs: CalculatorInputs) {
       taxable: Math.max(0, Math.round(currentTaxableIncome)),
       socialSecurity: Math.max(0, Math.round(currentSocialSecurityIncome)),
       pension: Math.max(0, Math.round(pensionIncome)),
+      rmd: Math.max(0, Math.round(currentRmdIncome))
+    });
+  }
+  
+  return data;
+}
+
+function calculateRetirementWithdrawal(inputs: CalculatorInputs, yearsInRetirement: number) {
+  // Simple calculation for demo purposes
+  const totalRetirementAssets = calculateTotalRetirementAssets(inputs);
+  
+  return totalRetirementAssets * (inputs.retirementWithdrawalRate / 100) * 
+    Math.pow(1 - inputs.retirementWithdrawalRate / 200, yearsInRetirement); // Slowly decreasing withdrawals
+}
+
+function calculateTotalRetirementAssets(inputs: CalculatorInputs) {
+  const yearsToRetirement = inputs.retirementAge - inputs.currentAge;
+  
+  let retirementAccounts = inputs.retirementAccounts + inputs.rothAccounts;
+  let taxableInvestments = inputs.taxableInvestments;
+  
+  // Account for annual contributions and growth
+  for (let year = 0; year < yearsToRetirement; year++) {
+    // Add annual contributions
+    retirementAccounts += inputs.annual401kContribution + inputs.annualRothContribution;
+    taxableInvestments += inputs.annualTaxableContribution;
+    
+    // Apply investment returns
+    retirementAccounts *= (1 + inputs.investmentReturnRate / 100);
+    taxableInvestments *= (1 + inputs.investmentReturnRate / 100);
+  }
+  
+  return retirementAccounts + taxableInvestments;
+}
+
+function generateSocialSecurityData(inputs: CalculatorInputs) {
+  // Base monthly benefit at full retirement age (67)
+  const baseMonthlyBenefit = inputs.socialSecurityBenefit;
+  
+  // Calculate benefits at different ages
+  const earlyBenefit = baseMonthlyBenefit * 0.7; // 30% reduction at age 62
+  const fullBenefit = baseMonthlyBenefit;
+  const delayedBenefit = baseMonthlyBenefit * 1.24; // 24% increase at age 70
+  
+  return [
+    { claimingAge: 62, monthlyBenefit: Math.round(earlyBenefit) },
+    { claimingAge: 67, monthlyBenefit: Math.round(fullBenefit) },
+    { claimingAge: 70, monthlyBenefit: Math.round(delayedBenefit) }
+  ];
+}
+
+function generateWithdrawalStrategyData(inputs: CalculatorInputs) {
+  const data = [];
+  
+  // Calculate total portfolio value at retirement
+  const totalRetirementAssets = calculateTotalRetirementAssets(inputs);
+  
+  // Split assets for more accurate RMD modeling
+  const traditionalIRA = inputs.retirementAccounts * 
+    Math.pow(1 + inputs.investmentReturnRate / 100, inputs.retirementAge - inputs.currentAge);
+  const rothIRA = inputs.rothAccounts * 
+    Math.pow(1 + inputs.investmentReturnRate / 100, inputs.retirementAge - inputs.currentAge);
+  const taxableAssets = totalRetirementAssets - traditionalIRA - rothIRA;
+  
+  const rmdStartAge = 73;
+  
+  // Create data points for different withdrawal strategies
+  for (let age = inputs.retirementAge; age <= inputs.lifeExpectancy; age++) {
+    const yearsInRetirement = age - inputs.retirementAge;
+    
+    // For RMD-adjusted strategies, calculate RMD first then supplement with additional withdrawals
+    let conservative = totalRetirementAssets * Math.pow(1.07 - 0.03, yearsInRetirement);
+    let moderate = totalRetirementAssets * Math.pow(1.07 - 0.04, yearsInRetirement);
+    let aggressive = totalRetirementAssets * Math.pow(1.07 - 0.05, yearsInRetirement);
+    
+    // Adjust for RMD impact - simplified illustration for the chart
+    if (age >= rmdStartAge) {
+      // Apply a small adjustment to show RMD impact on portfolio value
+      const rmdImpact = 0.005 * (age - rmdStartAge + 1); // Increases with age
+      conservative *= (1 - rmdImpact);
+      moderate *= (1 - rmdImpact);
+      aggressive *= (1 - rmdImpact);
+    }
+    
+    data.push({
+      age,
+      conservative: Math.max(0, Math.round(conservative)),
+      moderate: Math.max(0, Math.round(moderate)),
+      aggressive: Math.max(0, Math.round(aggressive))
+    });
+  }
+  
+  return data;
+}
+
+function generateRiskProfileData(inputs: CalculatorInputs) {
+  const data = [];
+  
+  // Calculate total current investments
+  const totalCurrentInvestments = 
+    inputs.retirementAccounts + 
+    inputs.rothAccounts + 
+    inputs.taxableInvestments;
+  
+  // Define returns for different risk profiles
+  const conservativeReturn = 5.0;
+  const moderateReturn = 7.0;
+  const aggressiveReturn = 9.0;
+  
+  let conservativeValue = totalCurrentInvestments;
+  let moderateValue = totalCurrentInvestments;
+  let aggressiveValue = totalCurrentInvestments;
+  
+  // Annual contributions
+  const annualContribution = 
+    inputs.annual401kContribution + 
+    inputs.annualRothContribution + 
+    inputs.annualTaxableContribution;
+  
+  for (let age = inputs.currentAge; age <= inputs.currentAge + 30; age++) {
+    // Add annual contributions (stop at retirement)
+    if (age < inputs.retirementAge) {
+      conservativeValue += annualContribution;
+      moderateValue += annualContribution;
+      aggressiveValue += annualContribution;
+    }
+    
+    // Apply returns
+    conservativeValue *= (1 + conservativeReturn / 100);
+    moderateValue *= (1 + moderateReturn / 100);
+    aggressiveValue *= (1 + aggressiveReturn / 100);
+    
+    // Every 5 years
+    if ((age - inputs.currentAge) % 5 === 0 || age === inputs.retirementAge) {
+      data.push({
+        age,
+        conservative: Math.round(conservativeValue),
+        moderate: Math.round(moderateValue),
+        aggressive: Math.round(aggressiveValue)
+      });
+    }
+  }
+  
+  return data;
+}
