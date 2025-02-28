@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import InputForm from "./InputForm";
 import Results from "./Results";
 import PhoneVerification from "./PhoneVerification";
+import Questionnaire from "./Questionnaire";
 import { calculatorDefaults } from "@/lib/calculator/defaults";
 import { calculateRetirementPlan } from "@/lib/calculator/calculations";
 import { CalculatorInputs, RetirementPlan } from "@/lib/calculator/types";
@@ -19,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ExternalLink } from "lucide-react";
+import { ClipboardList, ExternalLink, FormInput } from "lucide-react";
 
 interface CalculatorProps {
   initialInputs?: CalculatorInputs;
@@ -32,6 +33,7 @@ const Calculator = ({ initialInputs = calculatorDefaults }: CalculatorProps) => 
   const [isVerified, setIsVerified] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [showAdvisoryDialog, setShowAdvisoryDialog] = useState(false);
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false);
 
   // Update inputs when initialInputs changes (e.g., when test data is loaded)
   useEffect(() => {
@@ -102,6 +104,39 @@ const Calculator = ({ initialInputs = calculatorDefaults }: CalculatorProps) => 
     setShowVerification(false);
   };
 
+  const handleStartQuestionnaire = () => {
+    setShowQuestionnaire(true);
+  };
+
+  const handleQuestionnaireComplete = (questionnaireInputs: CalculatorInputs) => {
+    setInputs(questionnaireInputs);
+    setShowQuestionnaire(false);
+    
+    // Automatically calculate after completing questionnaire
+    try {
+      const plan = calculateRetirementPlan(questionnaireInputs);
+      setResults(plan);
+      setActiveTab("results");
+      toast({
+        title: "Questionnaire complete",
+        description: "Your retirement plan has been calculated based on your answers.",
+      });
+    } catch (error) {
+      toast({
+        title: "Calculation failed",
+        description: error instanceof Error ? error.message : "There was an issue with some of your answers. Please review your inputs.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelQuestionnaire = () => {
+    setShowQuestionnaire(false);
+    toast({
+      description: "Questionnaire cancelled. You can start again anytime.",
+    });
+  };
+
   return (
     <div className="w-full">
       <motion.div
@@ -144,6 +179,20 @@ const Calculator = ({ initialInputs = calculatorDefaults }: CalculatorProps) => 
                     </Button>
                   </div>
                 </motion.div>
+              ) : showQuestionnaire ? (
+                <motion.div
+                  key="questionnaire"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Questionnaire
+                    onComplete={handleQuestionnaireComplete}
+                    onCancel={handleCancelQuestionnaire}
+                    initialInputs={inputs}
+                  />
+                </motion.div>
               ) : (
                 <motion.div
                   key={activeTab}
@@ -153,6 +202,36 @@ const Calculator = ({ initialInputs = calculatorDefaults }: CalculatorProps) => 
                   transition={{ duration: 0.3 }}
                 >
                   <TabsContent value="inputs" className="mt-0">
+                    <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 mb-6">
+                      <Button 
+                        onClick={handleStartQuestionnaire}
+                        variant="outline"
+                        size="lg"
+                        className="w-full flex items-center justify-center gap-2 h-16 border-2 hover:bg-blue-50"
+                      >
+                        <ClipboardList className="h-5 w-5" />
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Fill Out Questionnaire</span>
+                          <span className="text-xs text-left font-normal">Simple guided questions</span>
+                        </div>
+                      </Button>
+                      
+                      <span className="hidden sm:flex items-center text-neutral-500">or</span>
+                      
+                      <Button 
+                        variant="outline"
+                        size="lg"
+                        className="w-full flex items-center justify-center gap-2 h-16 border-2 bg-blue-50 border-blue-200"
+                        disabled
+                      >
+                        <FormInput className="h-5 w-5" />
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Manual Input Dashboard</span>
+                          <span className="text-xs text-left font-normal">Advanced options</span>
+                        </div>
+                      </Button>
+                    </div>
+                    
                     <InputForm inputs={inputs} onChange={handleInputChange} />
                     <div className="mt-8 flex justify-end space-x-4">
                       <Button 
