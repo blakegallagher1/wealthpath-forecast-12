@@ -1,3 +1,4 @@
+
 import { calculateNetWorthProjection } from "./netWorthCalculator";
 import { generateIncomeSourcesData } from "./incomeSourcesCalculator";
 import { generateWithdrawalStrategyData } from "./withdrawalStrategyCalculator";
@@ -9,155 +10,142 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
   const {
     currentAge,
     retirementAge,
-    lifeExpectancy = 90,
-    annualIncome,
-    incomeGrowthRate = 0.03,
-    cashSavings = 0,
-    retirementAccounts = 0,
-    rothAccounts = 0,
-    taxableInvestments = 0,
-    realEstateEquity = 0,
-    annual401kContribution = 0,
-    annualRothContribution = 0,
-    annualTaxableContribution = 0,
-    investmentReturnRate = 0.07,
-    mortgageBalance = 0
+    lifeExpectancy,
+    cashSavings,
+    retirementAccounts,
+    rothAccounts,
+    taxableInvestments,
+    realEstateEquity,
+    mortgageBalance,
+    studentLoanBalance,
+    autoLoanBalance,
+    creditCardBalance,
+    annual401kContribution,
+    annualRothContribution,
+    annualTaxableContribution,
+    investmentReturnRate,
+    retirementWithdrawalRate,
+    socialSecurityBenefit,
+    spouseSocialSecurityBenefit,
+    retirementAnnualSpending,
+    hasPension,
+    pensionAmount,
+    inflationRate,
   } = inputs;
 
-  // Basic calculations
-  const yearsToRetirement = Math.max(0, retirementAge - currentAge);
-  const yearsInRetirement = Math.max(0, lifeExpectancy - retirementAge);
+  // Calculate remaining years until retirement
+  const yearsUntilRetirement = retirementAge - currentAge;
   
-  // Current total savings
-  const currentTotalSavings = cashSavings + retirementAccounts + rothAccounts + taxableInvestments;
+  // Calculate current total assets
+  const totalAssets = cashSavings + 
+                      retirementAccounts + 
+                      rothAccounts + 
+                      taxableInvestments + 
+                      realEstateEquity;
   
-  // Annual total contributions
-  const annualContributions = annual401kContribution + annualRothContribution + annualTaxableContribution;
+  // Calculate current total liabilities
+  const totalLiabilities = mortgageBalance + 
+                          studentLoanBalance + 
+                          autoLoanBalance + 
+                          creditCardBalance;
+  
+  // Calculate current net worth
+  const currentNetWorth = totalAssets - totalLiabilities;
+  
+  // Calculate total annual contributions to retirement accounts
+  const annualRetirementContributions = annual401kContribution + 
+                                        annualRothContribution + 
+                                        annualTaxableContribution;
 
-  // Calculate future value with a more realistic approach
-  let projectedSavings = currentTotalSavings;
-  // Reduce max return rate from 12% to 8%
-  const safeReturnRate = Math.min(Math.max(0.01, investmentReturnRate), 0.08); // Cap between 1% and 8% 
+  // Calculate life event impact for projections
+  const lifeEventImpact = calculateLifeEventImpact(inputs);
   
-  // Safe iterative approach for compound calculations
-  for (let i = 0; i < yearsToRetirement; i++) {
-    // Apply growth rate to current principal
-    projectedSavings = projectedSavings * (1 + safeReturnRate);
-    
-    // Add annual contributions
-    projectedSavings += annualContributions;
-    
-    // Safety cap to prevent unrealistic values
-    if (projectedSavings > 25000000) { // Cap at $25M instead of $50M
-      projectedSavings = 25000000;
-      break;
-    }
-  }
-
-  // Estimated annual retirement income (using 4% withdrawal rule)
-  const withdrawalRate = 0.04;
-  const estimatedAnnualRetirementIncome = projectedSavings * withdrawalRate;
-
-  // Sustainability score calculation (out of 100)
-  let sustainabilityScore = 75; // Default score
+  // Calculate projected retirement savings at retirement age
+  // Apply compound interest formula: P(1+r)^t + PMT[((1+r)^t - 1)/r]
+  // Where P = principal, r = rate, t = time, PMT = periodic payment
+  const retirementSavings = (retirementAccounts + rothAccounts + taxableInvestments) * 
+                          Math.pow(1 + investmentReturnRate / 100, yearsUntilRetirement) + 
+                          (annualRetirementContributions * 
+                          (Math.pow(1 + investmentReturnRate / 100, yearsUntilRetirement) - 1) / 
+                          (investmentReturnRate / 100));
   
-  // Adjust score based on savings ratio
-  const savingsRatio = annualContributions / Math.max(1, annualIncome);
-  if (savingsRatio > 0.15) {
-    sustainabilityScore += 10;
-  } else if (savingsRatio < 0.10) {
-    sustainabilityScore -= 10;
-  }
+  // Subtract life event costs from final retirement savings
+  const adjustedRetirementSavings = retirementSavings - lifeEventImpact;
   
-  // Adjust score based on investment return rate vs withdrawal rate
-  if (safeReturnRate > withdrawalRate + 0.02) {
-    sustainabilityScore += 15; // Significantly higher returns than withdrawals
-  } else if (safeReturnRate > withdrawalRate) {
-    sustainabilityScore += 10; // Higher returns than withdrawals
-  } else if (safeReturnRate < withdrawalRate - 0.01) {
-    sustainabilityScore -= 15; // Lower returns than withdrawals
-  }
+  // Calculate estimated annual retirement income
+  // Using the 4% rule (or user-specified withdrawal rate)
+  const withdrawalAmount = adjustedRetirementSavings * (retirementWithdrawalRate / 100);
   
-  // Adjust based on years in retirement
-  if (yearsInRetirement > 30) {
-    sustainabilityScore -= 10; // Long retirement period increases risk
-  } else if (yearsInRetirement < 20) {
-    sustainabilityScore += 5; // Shorter retirement period reduces risk
-  }
+  // Add social security and pension (if applicable)
+  const annualSocialSecurity = socialSecurityBenefit * 12;
+  const annualSpouseSocialSecurity = spouseSocialSecurityBenefit * 12;
+  const annualPension = hasPension ? pensionAmount : 0;
   
-  // Final clamping
-  sustainabilityScore = Math.max(0, Math.min(100, sustainabilityScore));
-
+  const totalAnnualRetirementIncome = withdrawalAmount + annualSocialSecurity + annualSpouseSocialSecurity + annualPension;
+  
+  // Calculate sustainability score (0-100)
+  // Based on income replacement ratio, portfolio longevity, and diversification
+  const incomeReplacementRatio = totalAnnualRetirementIncome / retirementAnnualSpending;
+  const sustainabilityScore = Math.min(100, Math.max(0, Math.round(incomeReplacementRatio * 50) + 
+                                                      (retirementWithdrawalRate <= 4 ? 30 : 
+                                                      retirementWithdrawalRate <= 5 ? 20 : 10) + 
+                                                      (investmentReturnRate >= 5 ? 20 : 10)));
+  
   // Calculate success probability
-  const successProbability = Math.min(100, Math.max(0, 
-    safeReturnRate > withdrawalRate ? 
-      80 + (safeReturnRate - withdrawalRate) * 400 : 
-      70 - (withdrawalRate - safeReturnRate) * 500
-  ));
-
-  // Calculate portfolio longevity
-  let portfolioLongevity: number;
+  // This is simplified, in reality would use Monte Carlo simulations
+  const successProbability = Math.min(99, Math.max(1, Math.round(sustainabilityScore * 0.95)));
   
-  if (safeReturnRate > withdrawalRate) {
-    portfolioLongevity = lifeExpectancy; // Theoretically sustainable indefinitely
-  } else {
-    try {
-      // Simplified formula for when portfolio depletes
-      // Using the formula: N = log(1 - r*P/PMT) / log(1+r) where:
-      // N = number of years, r = return rate, P = principal, PMT = annual withdrawal
-      const annualWithdrawal = estimatedAnnualRetirementIncome;
-      const ratio = annualWithdrawal / (projectedSavings * safeReturnRate);
-      
-      if (ratio >= 1) {
-        // Withdrawals exceed returns, use simplified formula
-        const yearsOfRetirement = projectedSavings / annualWithdrawal;
-        portfolioLongevity = Math.min(lifeExpectancy, retirementAge + Math.floor(yearsOfRetirement));
-      } else {
-        // Use more accurate formula for depletion
-        const depletion = Math.log(1 - ratio) / Math.log(1 + safeReturnRate);
-        
-        if (isNaN(depletion) || !isFinite(depletion) || depletion < 0) {
-          portfolioLongevity = lifeExpectancy; // Default to life expectancy if calculation fails
-        } else {
-          portfolioLongevity = Math.min(lifeExpectancy, retirementAge + Math.floor(depletion));
-        }
-      }
-    } catch (e) {
-      // Fallback if calculation fails
-      portfolioLongevity = Math.min(lifeExpectancy, retirementAge + 20);
+  // Calculate portfolio longevity
+  const retirementYears = lifeExpectancy - retirementAge;
+  const inflationAdjustedReturn = investmentReturnRate - inflationRate;
+  
+  let portfolioLongevity = retirementAge;
+  let remainingBalance = adjustedRetirementSavings;
+  
+  for (let i = 0; i < 50; i++) { // Max 50 years after retirement
+    if (remainingBalance <= 0) break;
+    
+    remainingBalance = remainingBalance * (1 + inflationAdjustedReturn / 100) - 
+                      retirementAnnualSpending * Math.pow(1 + inflationRate / 100, i);
+    
+    if (remainingBalance > 0) {
+      portfolioLongevity++;
     }
   }
-
+  
   // Generate recommendations
-  const recommendations = [];
-  if (sustainabilityScore < 60) {
-    recommendations.push("Consider increasing your savings rate.");
-    recommendations.push("Explore delaying retirement to increase your savings.");
+  const recommendations: string[] = [];
+  
+  if (retirementWithdrawalRate > 4) {
+    recommendations.push("Consider reducing your withdrawal rate to improve sustainability.");
   }
-  if (annualContributions < annualIncome * 0.15) {
-    recommendations.push("Aim to save at least 15% of your income for retirement.");
+  
+  if (incomeReplacementRatio < 0.7) {
+    recommendations.push("Your estimated retirement income may be insufficient. Consider increasing savings or delaying retirement.");
   }
-  if (successProbability < 70) {
-    recommendations.push("Consider more conservative withdrawal rates in retirement.");
+  
+  if (annual401kContribution < 19500 && inputs.annualIncome > 100000) {
+    recommendations.push("Maximize your 401(k) contributions to take advantage of tax benefits.");
   }
+  
+  if (inputs.creditCardBalance > 0) {
+    recommendations.push("Pay off high-interest credit card debt before focusing on investments.");
+  }
+  
   if (portfolioLongevity < lifeExpectancy) {
-    recommendations.push("Plan for a longer retirement horizon by increasing savings or reducing expenses.");
-  }
-  if (recommendations.length === 0) {
-    recommendations.push("Your retirement plan appears to be on track. Continue your current savings strategy.");
+    recommendations.push(`Your savings may run out at age ${portfolioLongevity}. Consider adjusting your retirement strategy.`);
   }
 
   // Generate chart data
-  const netWorthData = calculateNetWorthProjection(inputs);
+  const netWorthData = calculateNetWorthProjection(inputs, lifeEventImpact);
   const incomeSourcesData = generateIncomeSourcesData(inputs);
   const withdrawalStrategyData = generateWithdrawalStrategyData(inputs);
   const riskProfileData = generateRiskProfileData(inputs);
   const socialSecurityData = generateSocialSecurityData(inputs);
-  
-  // Return only properties defined in the RetirementPlan interface
+
   return {
-    totalRetirementSavings: projectedSavings,
-    estimatedAnnualRetirementIncome,
+    totalRetirementSavings: adjustedRetirementSavings,
+    estimatedAnnualRetirementIncome: totalAnnualRetirementIncome,
     sustainabilityScore,
     successProbability,
     portfolioLongevity,
@@ -166,6 +154,52 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
     incomeSourcesData,
     withdrawalStrategyData,
     riskProfileData,
-    socialSecurityData
+    socialSecurityData,
   };
+};
+
+// Helper function to calculate the impact of life events on savings
+const calculateLifeEventImpact = (inputs: CalculatorInputs): number => {
+  let totalImpact = 0;
+  const currentYear = new Date().getFullYear();
+  
+  // Wedding costs
+  if (inputs.planningWedding) {
+    const yearsToWedding = Math.max(0, inputs.weddingYear - currentYear);
+    // Calculate present value of future wedding costs
+    if (yearsToWedding === 0) {
+      // If wedding is this year, full impact
+      totalImpact += inputs.weddingCost;
+    } else {
+      // Calculate how much would need to be saved from now until wedding
+      // Assuming the amount grows with investment return rate
+      const monthlyContribution = inputs.weddingCost / (yearsToWedding * 12);
+      // This is simplified - in reality would need to calculate growing annuity
+      totalImpact += monthlyContribution * 12 * yearsToWedding; // Annual impact on savings over time
+    }
+  }
+  
+  // Children costs
+  if (inputs.planningChildren) {
+    // Assuming children costs start 1 year from now and continue for 18 years per child
+    const totalChildrenCost = inputs.numberOfChildren * inputs.childCostPerYear * 18;
+    // Simplified: estimate how much this reduces retirement savings
+    // Assuming about 15% of child costs would have gone to retirement otherwise
+    totalImpact += totalChildrenCost * 0.15;
+  }
+  
+  // Home purchase
+  if (inputs.planningHomePurchase) {
+    const yearsToHomePurchase = Math.max(0, inputs.homePurchaseYear - currentYear);
+    if (yearsToHomePurchase === 0) {
+      // If home purchase is this year, full down payment impact
+      totalImpact += inputs.homeDownPayment;
+    } else {
+      // Calculate how much would need to be saved annually for down payment
+      const annualSavingsForDownPayment = inputs.homeDownPayment / yearsToHomePurchase;
+      totalImpact += annualSavingsForDownPayment * yearsToHomePurchase; // Total impact on other savings
+    }
+  }
+  
+  return totalImpact;
 };
