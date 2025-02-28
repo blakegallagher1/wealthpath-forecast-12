@@ -83,7 +83,7 @@ const RetirementSummary = ({ plan, inputs }: RetirementSummaryProps) => {
           className="bg-white p-6 rounded-xl border border-neutral-200 shadow-sm"
         >
           <div className="text-sm text-neutral-500 uppercase tracking-wider">Retirement Income</div>
-          <div className="text-3xl font-medium mt-2">${new Intl.NumberFormat("en-US").format(plan.estimatedAnnualRetirementIncome)}</div>
+          <div className="text-3xl font-medium mt-2">${new Intl.NumberFormat("en-US").format(Math.round(plan.estimatedAnnualRetirementIncome))}</div>
           <div className="text-sm text-neutral-600 mt-1">estimated annual retirement income</div>
         </motion.div>
 
