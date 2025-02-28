@@ -1,4 +1,4 @@
-
+<lov-code>
 import { CalculatorInputs, RetirementPlan } from "./types";
 
 export function calculateRetirementPlan(inputs: CalculatorInputs): RetirementPlan {
@@ -14,23 +14,27 @@ export function calculateRetirementPlan(inputs: CalculatorInputs): RetirementPla
   const spouseYearsToRetirement = hasSpouse ? inputs.spouseRetirementAge - inputs.spouseAge : 0;
   const familyRetirementYear = Math.max(yearsToRetirement, spouseYearsToRetirement);
   
-  // Calculate retirement savings
+  // Calculate retirement savings with volatility modeling
   let retirementSavings = inputs.retirementAccounts + inputs.rothAccounts;
   let taxableInvestments = inputs.taxableInvestments;
   let cashSavings = inputs.cashSavings;
   let realEstateEquity = inputs.realEstateEquity;
   
-  // Account for annual contributions and growth
+  // Generate random market scenarios based on risk profile
+  const marketScenarios = generateMarketScenarios(inputs.riskProfile, yearsToRetirement);
+  
+  // Account for annual contributions and growth with volatility
   for (let year = 0; year < yearsToRetirement; year++) {
     // Add annual contributions
     retirementSavings += inputs.annual401kContribution + inputs.annualRothContribution;
     taxableInvestments += inputs.annualTaxableContribution;
     
-    // Apply investment returns
-    retirementSavings *= (1 + inputs.investmentReturnRate / 100);
-    taxableInvestments *= (1 + inputs.investmentReturnRate / 100);
-    cashSavings *= (1 + (inputs.investmentReturnRate / 3) / 100); // Lower return on cash
-    realEstateEquity *= (1 + (inputs.investmentReturnRate / 2) / 100); // Moderate growth for real estate
+    // Apply investment returns with volatility based on the current year's market scenario
+    const yearReturn = marketScenarios[year];
+    retirementSavings *= (1 + yearReturn / 100);
+    taxableInvestments *= (1 + yearReturn / 100);
+    cashSavings *= (1 + (yearReturn / 3) / 100); // Lower return on cash
+    realEstateEquity *= (1 + (yearReturn / 2) / 100); // Moderate growth for real estate
     
     // Account for inflation
     cashSavings /= (1 + inputs.inflationRate / 100);
@@ -46,14 +50,22 @@ export function calculateRetirementPlan(inputs: CalculatorInputs): RetirementPla
   
   const estimatedAnnualRetirementIncome = annualWithdrawal + socialSecurityIncome + spouseSocialSecurityIncome + pensionIncome;
   
-  // Calculate sustainability metrics
+  // Calculate sustainability metrics with volatility considerations
   const incomeToExpenseRatio = estimatedAnnualRetirementIncome / inputs.retirementAnnualSpending;
   const sustainabilityScore = Math.min(100, Math.round(incomeToExpenseRatio * 80));
   
-  const successProbability = calculateSuccessProbability(incomeToExpenseRatio, inputs.riskProfile, yearsInRetirement);
+  // Calculate success probability with Monte Carlo simulation
+  const successProbability = calculateSuccessProbabilityWithMonteCarlo(
+    totalRetirementSavings, 
+    inputs.retirementAnnualSpending,
+    inputs.investmentReturnRate,
+    inputs.inflationRate,
+    inputs.riskProfile,
+    yearsInRetirement
+  );
   
-  // Calculate portfolio longevity
-  const portfolioLongevity = calculatePortfolioLongevity(
+  // Calculate portfolio longevity with volatility
+  const portfolioLongevity = calculatePortfolioLongevityWithVolatility(
     totalRetirementSavings,
     inputs.retirementAnnualSpending,
     inputs.investmentReturnRate,
@@ -61,7 +73,8 @@ export function calculateRetirementPlan(inputs: CalculatorInputs): RetirementPla
     inputs.socialSecurityBenefit,
     hasSpouse ? inputs.spouseSocialSecurityBenefit : 0,
     inputs.hasPension ? inputs.pensionAmount : 0,
-    inputs.retirementAge
+    inputs.retirementAge,
+    inputs.riskProfile
   );
   
   // Generate recommendations
@@ -72,8 +85,8 @@ export function calculateRetirementPlan(inputs: CalculatorInputs): RetirementPla
     portfolioLongevity
   );
   
-  // Generate chart data
-  const netWorthData = generateNetWorthData(inputs);
+  // Generate chart data with volatility
+  const netWorthData = generateNetWorthDataWithVolatility(inputs);
   const incomeSourcesData = generateIncomeSourcesData(inputs);
   const socialSecurityData = generateSocialSecurityData(inputs);
   const withdrawalStrategyData = generateWithdrawalStrategyData(inputs);
@@ -94,30 +107,149 @@ export function calculateRetirementPlan(inputs: CalculatorInputs): RetirementPla
   };
 }
 
-function calculateSuccessProbability(
-  incomeToExpenseRatio: number,
+// Function to generate market scenarios based on risk profile
+function generateMarketScenarios(riskProfile: string, years: number): number[] {
+  const scenarios: number[] = [];
+  
+  // Define volatility parameters based on risk profile
+  let meanReturn: number;
+  let volatility: number;
+  
+  switch (riskProfile) {
+    case "conservative":
+      meanReturn = 5.0;
+      volatility = 6.0;
+      break;
+    case "moderate":
+      meanReturn = 7.0;
+      volatility = 12.0;
+      break;
+    case "aggressive":
+      meanReturn = 9.0;
+      volatility = 18.0;
+      break;
+    default:
+      meanReturn = 7.0;
+      volatility = 12.0;
+  }
+  
+  // Generate random returns for each year using a normal distribution approximation
+  for (let year = 0; year < years; year++) {
+    // Box-Muller transform to generate normally distributed random numbers
+    const u1 = Math.random();
+    const u2 = Math.random();
+    const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    
+    // Apply mean and volatility
+    const annualReturn = meanReturn + z * volatility;
+    
+    // Add some mean reversion - extreme years tend to be followed by less extreme years
+    if (year > 0) {
+      const previousReturn = scenarios[year - 1];
+      if (previousReturn < (meanReturn - volatility) && annualReturn < meanReturn) {
+        // After a very bad year, nudge upward slightly to model mean reversion
+        scenarios.push((annualReturn + meanReturn) / 2);
+      } else if (previousReturn > (meanReturn + volatility) && annualReturn > meanReturn) {
+        // After a very good year, nudge downward slightly to model mean reversion
+        scenarios.push((annualReturn + meanReturn) / 2);
+      } else {
+        scenarios.push(annualReturn);
+      }
+    } else {
+      scenarios.push(annualReturn);
+    }
+  }
+  
+  // Model recession periods - add at least one market downturn cycle 
+  if (years > 10) {
+    // Find a spot for a recession between years 3-7
+    const recessionStart = 3 + Math.floor(Math.random() * 5);
+    const recessionLength = 1 + Math.floor(Math.random() * 2); // 1-2 years
+    
+    for (let i = 0; i < recessionLength; i++) {
+      if (recessionStart + i < years) {
+        // Model a significant downturn (negative returns)
+        scenarios[recessionStart + i] = -10 - Math.random() * 15; // -10% to -25%
+      }
+    }
+    
+    // Possibility of a second recession if the timeline is long enough
+    if (years > 20) {
+      const secondRecessionStart = recessionStart + 8 + Math.floor(Math.random() * 5);
+      const secondRecessionLength = 1 + Math.floor(Math.random() * 2);
+      
+      for (let i = 0; i < secondRecessionLength; i++) {
+        if (secondRecessionStart + i < years) {
+          // Model a second significant downturn
+          scenarios[secondRecessionStart + i] = -8 - Math.random() * 12; // -8% to -20%
+        }
+      }
+    }
+  }
+  
+  return scenarios;
+}
+
+// Monte Carlo simulation for success probability
+function calculateSuccessProbabilityWithMonteCarlo(
+  initialPortfolio: number,
+  annualSpending: number,
+  meanReturnRate: number,
+  inflationRate: number,
   riskProfile: string,
   yearsInRetirement: number
 ): number {
-  // Simplified calculation for demo purposes
-  let baseSuccess = incomeToExpenseRatio * 85;
+  const simulationRuns = 1000;
+  let successfulRuns = 0;
   
-  // Adjust based on risk profile
-  if (riskProfile === "conservative") {
-    baseSuccess = Math.min(baseSuccess * 1.1, 99); // More consistent but potentially lower returns
-  } else if (riskProfile === "aggressive") {
-    baseSuccess = baseSuccess * 0.95; // More variability in outcomes
+  // Define volatility based on risk profile
+  let volatility: number;
+  switch (riskProfile) {
+    case "conservative":
+      volatility = 6.0;
+      break;
+    case "moderate":
+      volatility = 12.0;
+      break;
+    case "aggressive":
+      volatility = 18.0;
+      break;
+    default:
+      volatility = 12.0;
   }
   
-  // Adjust based on retirement duration
-  if (yearsInRetirement > 30) {
-    baseSuccess = baseSuccess * 0.9; // Longer timeframes introduce more uncertainty
+  for (let run = 0; run < simulationRuns; run++) {
+    let portfolioValue = initialPortfolio;
+    let isSuccessful = true;
+    
+    for (let year = 0; year < yearsInRetirement; year++) {
+      // Generate random return for this year
+      const u1 = Math.random();
+      const u2 = Math.random();
+      const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+      const annualReturn = meanReturnRate + z * volatility;
+      
+      // Apply return and withdrawal
+      portfolioValue = portfolioValue * (1 + annualReturn / 100);
+      const inflationAdjustedSpending = annualSpending * Math.pow(1 + inflationRate / 100, year);
+      portfolioValue -= inflationAdjustedSpending;
+      
+      // Check if portfolio is depleted
+      if (portfolioValue <= 0) {
+        isSuccessful = false;
+        break;
+      }
+    }
+    
+    if (isSuccessful) {
+      successfulRuns++;
+    }
   }
   
-  return Math.round(Math.min(baseSuccess, 99));
+  return Math.round((successfulRuns / simulationRuns) * 100);
 }
 
-function calculatePortfolioLongevity(
+function calculatePortfolioLongevityWithVolatility(
   totalSavings: number,
   annualSpending: number,
   investmentReturn: number,
@@ -125,36 +257,79 @@ function calculatePortfolioLongevity(
   socialSecurityBenefit: number,
   spouseSocialSecurityBenefit: number,
   pensionAmount: number,
-  retirementAge: number
+  retirementAge: number,
+  riskProfile: string
 ): number {
-  // Calculate real return (return minus inflation)
-  const realReturn = (1 + investmentReturn / 100) / (1 + inflationRate / 100) - 1;
+  // Run multiple simulations and take the median outcome
+  const simulationRuns = 500;
+  const longevityResults: number[] = [];
+  
+  // Define volatility based on risk profile
+  let volatility: number;
+  switch (riskProfile) {
+    case "conservative":
+      volatility = 6.0;
+      break;
+    case "moderate":
+      volatility = 12.0;
+      break;
+    case "aggressive":
+      volatility = 18.0;
+      break;
+    default:
+      volatility = 12.0;
+  }
   
   // Annual income from other sources
   const otherAnnualIncome = (socialSecurityBenefit + spouseSocialSecurityBenefit) * 12 + pensionAmount;
   
   // Net annual withdrawal needed from portfolio
-  const netAnnualWithdrawal = Math.max(0, annualSpending - otherAnnualIncome);
+  const initialNetAnnualWithdrawal = Math.max(0, annualSpending - otherAnnualIncome);
   
-  if (netAnnualWithdrawal <= 0) {
+  if (initialNetAnnualWithdrawal <= 0) {
     // If other income sources cover expenses, portfolio can last indefinitely
     return 99;
   }
   
-  // Calculate withdrawal rate
-  const withdrawalRate = netAnnualWithdrawal / totalSavings;
-  
-  // If withdrawal rate is less than real return, portfolio can last indefinitely
-  if (withdrawalRate <= realReturn) {
-    return 99;
+  for (let run = 0; run < simulationRuns; run++) {
+    let portfolioValue = totalSavings;
+    let currentAge = retirementAge;
+    let depleted = false;
+    
+    while (currentAge < 120 && !depleted) {
+      // Generate random return for this year
+      const u1 = Math.random();
+      const u2 = Math.random();
+      const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+      const annualReturn = investmentReturn + z * volatility;
+      
+      // Apply investment return
+      portfolioValue = portfolioValue * (1 + annualReturn / 100);
+      
+      // Calculate inflation-adjusted withdrawal for this year
+      const yearsInRetirement = currentAge - retirementAge;
+      const inflationFactor = Math.pow(1 + inflationRate / 100, yearsInRetirement);
+      const adjustedWithdrawal = initialNetAnnualWithdrawal * inflationFactor;
+      
+      // Withdraw money
+      portfolioValue -= adjustedWithdrawal;
+      
+      // Check if portfolio is depleted
+      if (portfolioValue <= 0) {
+        depleted = true;
+      } else {
+        currentAge++;
+      }
+    }
+    
+    // Record the longevity result
+    longevityResults.push(depleted ? currentAge : 99);
   }
   
-  // Simple calculation for estimating years the portfolio will last
-  // ln(1 - (withdrawal rate / real return)) / ln(1 + real return)
-  const portfolioYears = Math.log(1 - (withdrawalRate / realReturn)) / Math.log(1 + realReturn);
-  
-  // Determine age when portfolio is depleted
-  return Math.min(99, Math.round(retirementAge + portfolioYears));
+  // Sort results and take the median
+  longevityResults.sort((a, b) => a - b);
+  const medianIndex = Math.floor(simulationRuns / 2);
+  return longevityResults[medianIndex];
 }
 
 function generateRecommendations(
@@ -240,9 +415,15 @@ function generateRecommendations(
   return recommendations;
 }
 
-function generateNetWorthData(inputs: CalculatorInputs) {
+function generateNetWorthDataWithVolatility(inputs: CalculatorInputs) {
   const data = [];
   const hasSpouse = inputs.spouseName.trim() !== "";
+  
+  // Generate market scenarios based on risk profile
+  const preRetirementYears = inputs.retirementAge - inputs.currentAge;
+  const postRetirementYears = 30; // Show 30 years into retirement
+  const totalYears = preRetirementYears + postRetirementYears;
+  const marketScenarios = generateMarketScenarios(inputs.riskProfile, totalYears);
   
   // Split retirement accounts into traditional and Roth for RMD calculations
   let traditionalRetirement = inputs.retirementAccounts;
@@ -257,6 +438,8 @@ function generateNetWorthData(inputs: CalculatorInputs) {
   
   // Pre-retirement (using primary person's retirement age)
   for (let age = inputs.currentAge; age <= inputs.retirementAge; age++) {
+    const yearIndex = age - inputs.currentAge;
+    
     // Check if spouse is still working (additional income)
     const spouseAge = hasSpouse ? inputs.spouseAge + (age - inputs.currentAge) : 0;
     const spouseIsWorking = hasSpouse && spouseAge < inputs.spouseRetirementAge;
@@ -266,12 +449,15 @@ function generateNetWorthData(inputs: CalculatorInputs) {
     rothRetirement += annualRothContribution;
     taxable += inputs.annualTaxableContribution;
     
-    // Apply returns
-    cash *= (1 + (inputs.investmentReturnRate / 3) / 100);
-    traditionalRetirement *= (1 + inputs.investmentReturnRate / 100);
-    rothRetirement *= (1 + inputs.investmentReturnRate / 100);
-    taxable *= (1 + inputs.investmentReturnRate / 100);
-    realEstate *= (1 + (inputs.investmentReturnRate / 2) / 100);
+    // Get the return rate for this year from market scenarios
+    const yearReturn = marketScenarios[yearIndex];
+    
+    // Apply returns with volatility
+    cash *= (1 + (yearReturn / 3) / 100);
+    traditionalRetirement *= (1 + yearReturn / 100);
+    rothRetirement *= (1 + yearReturn / 100);
+    taxable *= (1 + yearReturn / 100);
+    realEstate *= (1 + (yearReturn / 2) / 100);
     
     // Account for life events
     if (inputs.planningWedding && age === Math.floor(inputs.weddingYear - inputs.currentAge + inputs.currentAge)) {
@@ -302,6 +488,11 @@ function generateNetWorthData(inputs: CalculatorInputs) {
   const rmdStartAge = 73; // Current RMD start age (as of 2023 SECURE Act 2.0)
   
   for (let age = inputs.retirementAge + 1; age <= inputs.retirementAge + 20; age++) {
+    const yearIndex = age - inputs.currentAge;
+    
+    // Get the return rate for this year from market scenarios
+    const yearReturn = marketScenarios[yearIndex];
+    
     // Calculate total portfolio value
     const totalPortfolioValue = cash + traditionalRetirement + rothRetirement + taxable;
     
@@ -388,12 +579,12 @@ function generateNetWorthData(inputs: CalculatorInputs) {
     taxable -= taxableWithdrawal;
     cash -= cashWithdrawal;
     
-    // Apply growth to remaining balances
-    traditionalRetirement *= (1 + inputs.investmentReturnRate / 100);
-    rothRetirement *= (1 + inputs.investmentReturnRate / 100);
-    taxable *= (1 + inputs.investmentReturnRate / 100);
-    cash *= (1 + (inputs.investmentReturnRate / 3) / 100);
-    realEstate *= (1 + (inputs.investmentReturnRate / 2) / 100);
+    // Apply growth to remaining balances with volatility
+    traditionalRetirement *= (1 + yearReturn / 100);
+    rothRetirement *= (1 + yearReturn / 100);
+    taxable *= (1 + yearReturn / 100);
+    cash *= (1 + (yearReturn / 3) / 100);
+    realEstate *= (1 + (yearReturn / 2) / 100);
     
     // Combine retirement accounts for data display
     const totalRetirement = traditionalRetirement + rothRetirement;
@@ -586,148 +777,3 @@ function generateIncomeSourcesData(inputs: CalculatorInputs) {
       taxable: Math.max(0, Math.round(currentTaxableIncome)),
       socialSecurity: Math.max(0, Math.round(currentSocialSecurityIncome)),
       pension: Math.max(0, Math.round(pensionIncome)),
-      rmd: Math.max(0, Math.round(currentRmdIncome))
-    });
-  }
-  
-  return data;
-}
-
-function calculateRetirementWithdrawal(inputs: CalculatorInputs, yearsInRetirement: number) {
-  // Simple calculation for demo purposes
-  const totalRetirementAssets = calculateTotalRetirementAssets(inputs);
-  
-  return totalRetirementAssets * (inputs.retirementWithdrawalRate / 100) * 
-    Math.pow(1 - inputs.retirementWithdrawalRate / 200, yearsInRetirement); // Slowly decreasing withdrawals
-}
-
-function calculateTotalRetirementAssets(inputs: CalculatorInputs) {
-  const yearsToRetirement = inputs.retirementAge - inputs.currentAge;
-  
-  let retirementAccounts = inputs.retirementAccounts + inputs.rothAccounts;
-  let taxableInvestments = inputs.taxableInvestments;
-  
-  // Account for annual contributions and growth
-  for (let year = 0; year < yearsToRetirement; year++) {
-    // Add annual contributions
-    retirementAccounts += inputs.annual401kContribution + inputs.annualRothContribution;
-    taxableInvestments += inputs.annualTaxableContribution;
-    
-    // Apply investment returns
-    retirementAccounts *= (1 + inputs.investmentReturnRate / 100);
-    taxableInvestments *= (1 + inputs.investmentReturnRate / 100);
-  }
-  
-  return retirementAccounts + taxableInvestments;
-}
-
-function generateSocialSecurityData(inputs: CalculatorInputs) {
-  // Base monthly benefit at full retirement age (67)
-  const baseMonthlyBenefit = inputs.socialSecurityBenefit;
-  
-  // Calculate benefits at different ages
-  const earlyBenefit = baseMonthlyBenefit * 0.7; // 30% reduction at age 62
-  const fullBenefit = baseMonthlyBenefit;
-  const delayedBenefit = baseMonthlyBenefit * 1.24; // 24% increase at age 70
-  
-  return [
-    { claimingAge: 62, monthlyBenefit: Math.round(earlyBenefit) },
-    { claimingAge: 67, monthlyBenefit: Math.round(fullBenefit) },
-    { claimingAge: 70, monthlyBenefit: Math.round(delayedBenefit) }
-  ];
-}
-
-function generateWithdrawalStrategyData(inputs: CalculatorInputs) {
-  const data = [];
-  
-  // Calculate total portfolio value at retirement
-  const totalRetirementAssets = calculateTotalRetirementAssets(inputs);
-  
-  // Split assets for more accurate RMD modeling
-  const traditionalIRA = inputs.retirementAccounts * 
-    Math.pow(1 + inputs.investmentReturnRate / 100, inputs.retirementAge - inputs.currentAge);
-  const rothIRA = inputs.rothAccounts * 
-    Math.pow(1 + inputs.investmentReturnRate / 100, inputs.retirementAge - inputs.currentAge);
-  const taxableAssets = totalRetirementAssets - traditionalIRA - rothIRA;
-  
-  const rmdStartAge = 73;
-  
-  // Create data points for different withdrawal strategies
-  for (let age = inputs.retirementAge; age <= inputs.lifeExpectancy; age++) {
-    const yearsInRetirement = age - inputs.retirementAge;
-    
-    // For RMD-adjusted strategies, calculate RMD first then supplement with additional withdrawals
-    let conservative = totalRetirementAssets * Math.pow(1.07 - 0.03, yearsInRetirement);
-    let moderate = totalRetirementAssets * Math.pow(1.07 - 0.04, yearsInRetirement);
-    let aggressive = totalRetirementAssets * Math.pow(1.07 - 0.05, yearsInRetirement);
-    
-    // Adjust for RMD impact - simplified illustration for the chart
-    if (age >= rmdStartAge) {
-      // Apply a small adjustment to show RMD impact on portfolio value
-      const rmdImpact = 0.005 * (age - rmdStartAge + 1); // Increases with age
-      conservative *= (1 - rmdImpact);
-      moderate *= (1 - rmdImpact);
-      aggressive *= (1 - rmdImpact);
-    }
-    
-    data.push({
-      age,
-      conservative: Math.max(0, Math.round(conservative)),
-      moderate: Math.max(0, Math.round(moderate)),
-      aggressive: Math.max(0, Math.round(aggressive))
-    });
-  }
-  
-  return data;
-}
-
-function generateRiskProfileData(inputs: CalculatorInputs) {
-  const data = [];
-  
-  // Calculate total current investments
-  const totalCurrentInvestments = 
-    inputs.retirementAccounts + 
-    inputs.rothAccounts + 
-    inputs.taxableInvestments;
-  
-  // Define returns for different risk profiles
-  const conservativeReturn = 5.0;
-  const moderateReturn = 7.0;
-  const aggressiveReturn = 9.0;
-  
-  let conservativeValue = totalCurrentInvestments;
-  let moderateValue = totalCurrentInvestments;
-  let aggressiveValue = totalCurrentInvestments;
-  
-  // Annual contributions
-  const annualContribution = 
-    inputs.annual401kContribution + 
-    inputs.annualRothContribution + 
-    inputs.annualTaxableContribution;
-  
-  for (let age = inputs.currentAge; age <= inputs.currentAge + 30; age++) {
-    // Add annual contributions (stop at retirement)
-    if (age < inputs.retirementAge) {
-      conservativeValue += annualContribution;
-      moderateValue += annualContribution;
-      aggressiveValue += annualContribution;
-    }
-    
-    // Apply returns
-    conservativeValue *= (1 + conservativeReturn / 100);
-    moderateValue *= (1 + moderateReturn / 100);
-    aggressiveValue *= (1 + aggressiveReturn / 100);
-    
-    // Every 5 years
-    if ((age - inputs.currentAge) % 5 === 0 || age === inputs.retirementAge) {
-      data.push({
-        age,
-        conservative: Math.round(conservativeValue),
-        moderate: Math.round(moderateValue),
-        aggressive: Math.round(aggressiveValue)
-      });
-    }
-  }
-  
-  return data;
-}
