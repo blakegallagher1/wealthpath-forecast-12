@@ -24,10 +24,10 @@ export function generateRiskProfileData(inputs: CalculatorInputs): RiskProfileDa
   let moderate = totalInvestments;
   let aggressive = totalInvestments;
   
-  // Return rates by risk profile - more conservative
-  const conservativeReturnRate = 0.04; // 4% return (reduced from 5%)
-  const moderateReturnRate = 0.06;     // 6% return (reduced from 7%)
-  const aggressiveReturnRate = 0.08;   // 8% return (reduced from 9%)
+  // Return rates by risk profile - updated to the requested values
+  const conservativeReturnRate = 0.03; // 3% return (reduced from 4%)
+  const moderateReturnRate = 0.045;    // 4.5% return (reduced from 6%)
+  const aggressiveReturnRate = 0.06;   // 6% return (reduced from 8%)
   
   // Withdrawal rate in retirement
   const withdrawalRate = 0.04; // 4% withdrawal rate

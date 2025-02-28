@@ -17,7 +17,7 @@ export function generateWithdrawalStrategyData(inputs: CalculatorInputs): Withdr
                             (inputs.annualTaxableContribution || 0);
   
   const yearsToRetirement = Math.max(0, retirementAge - currentAge);
-  const returnRate = Math.min(inputs.investmentReturnRate || 0.07, 0.07); // Cap at 7% (reduced from 9%)
+  const returnRate = Math.min(inputs.investmentReturnRate || 0.05, 0.05); // Cap at 5% (reduced from 7%)
   
   // Project savings to retirement with a more conservative approach
   for (let i = 0; i < yearsToRetirement; i++) {
