@@ -1,10 +1,9 @@
-
-import { CalculatorInputs, RetirementPlan } from "./types";
-import { generateNetWorthData } from "./netWorthCalculator";
+import { calculateNetWorthProjection } from "./netWorthCalculator";
 import { generateIncomeSourcesData } from "./incomeSourcesCalculator";
 import { generateWithdrawalStrategyData } from "./withdrawalStrategyCalculator";
 import { generateRiskProfileData } from "./riskProfileCalculator";
 import { generateSocialSecurityData } from "./socialSecurityCalculator";
+import { CalculatorInputs, RetirementPlan } from "./types";
 
 export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPlan => {
   const {
@@ -149,7 +148,7 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
   }
 
   // Generate chart data
-  const netWorthData = generateNetWorthData(inputs);
+  const netWorthData = calculateNetWorthProjection(inputs);
   const incomeSourcesData = generateIncomeSourcesData(inputs);
   const withdrawalStrategyData = generateWithdrawalStrategyData(inputs);
   const riskProfileData = generateRiskProfileData(inputs);

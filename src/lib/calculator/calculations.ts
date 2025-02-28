@@ -1,9 +1,9 @@
 
 import { calculateNetWorthProjection } from "./netWorthCalculator";
-import { calculateIncomeSourcesData } from "./incomeSourcesCalculator";
-import { calculateWithdrawalStrategyData } from "./withdrawalStrategyCalculator";
-import { calculateRiskProfileData } from "./riskProfileCalculator";
-import { calculateSocialSecurityData } from "./socialSecurityCalculator";
+import { generateIncomeSourcesData } from "./incomeSourcesCalculator";
+import { generateWithdrawalStrategyData } from "./withdrawalStrategyCalculator";
+import { generateRiskProfileData } from "./riskProfileCalculator";
+import { generateSocialSecurityData } from "./socialSecurityCalculator";
 import { CalculatorInputs, RetirementPlan } from "./types";
 
 export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPlan => {
@@ -113,13 +113,12 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
   
   // Calculate data for charts
   const netWorthData = calculateNetWorthProjection(inputs, lifeEventImpact);
-  const incomeSourcesData = calculateIncomeSourcesData(inputs);
-  const withdrawalStrategyData = calculateWithdrawalStrategyData(inputs, adjustedRetirementSavings);
-  const riskProfileData = calculateRiskProfileData(inputs, adjustedRetirementSavings);
-  const socialSecurityData = calculateSocialSecurityData(inputs);
+  const incomeSourcesData = generateIncomeSourcesData(inputs);
+  const withdrawalStrategyData = generateWithdrawalStrategyData(inputs);
+  const riskProfileData = generateRiskProfileData(inputs);
+  const socialSecurityData = generateSocialSecurityData(inputs);
   
   return {
-    currentNetWorth,
     totalRetirementSavings: adjustedRetirementSavings,
     estimatedAnnualRetirementIncome: totalAnnualRetirementIncome,
     sustainabilityScore,
