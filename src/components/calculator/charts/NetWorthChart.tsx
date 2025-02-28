@@ -22,6 +22,8 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
   }), [isDark]);
 
   const formatCurrency = (value: number) => {
+    if (typeof value !== 'number' || isNaN(value)) return '$0';
+    
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
