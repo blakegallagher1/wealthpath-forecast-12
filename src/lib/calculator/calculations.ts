@@ -112,6 +112,7 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
   const riskProfileData = generateRiskProfileData(inputs);
   const socialSecurityData = generateSocialSecurityData(inputs);
   
+  // Return only properties defined in the RetirementPlan interface
   return {
     totalRetirementSavings: projectedSavings,
     estimatedAnnualRetirementIncome,
