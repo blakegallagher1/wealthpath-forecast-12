@@ -1,3 +1,4 @@
+
 export interface CalculatorInputs {
   // Personal details
   name: string;
@@ -63,40 +64,50 @@ export interface CalculatorInputs {
 
 export interface NetWorthDataPoint {
   age: number;
+  year?: number;
   cash: number;
   retirement: number;
   taxable: number;
   realEstate: number;
   total: number;
+  isRetirementAge?: boolean;
 }
 
 export interface IncomeSourcesDataPoint {
   age: number;
+  year?: number;
   employment: number;
   socialSecurity: number;
   retirement: number;
   pension: number;
   rmd: number;
   taxable: number;
+  total?: number;
+  isRetirementAge?: boolean;
 }
 
 export interface SocialSecurityDataPoint {
   claimingAge: number;
   monthlyBenefit: number;
+  lifetimeTotal?: number;
 }
 
 export interface WithdrawalStrategyDataPoint {
   age: number;
+  year?: number;
   conservative: number;
   moderate: number;
   aggressive: number;
+  isRetirementAge?: boolean;
 }
 
 export interface RiskProfileDataPoint {
   age: number;
+  year?: number;
   conservative: number;
   moderate: number;
   aggressive: number;
+  isRetirementAge?: boolean;
 }
 
 export interface RetirementPlan {

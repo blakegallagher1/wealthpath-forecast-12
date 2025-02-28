@@ -1,6 +1,6 @@
 
 import { useMemo } from "react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from "recharts";
 import { useTheme } from "@/hooks/use-theme";
 import { NetWorthDataPoint } from "@/lib/calculator/types";
 
@@ -29,6 +29,9 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
       maximumFractionDigits: 1,
     }).format(value);
   };
+
+  // Find the retirement age point for reference line
+  const retirementPoint = data.find(point => point.isRetirementAge);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -97,6 +100,16 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
           fill={colors.cash}
           name="Cash Savings"
         />
+
+        {retirementPoint && (
+          <ReferenceLine
+            x={retirementPoint.age}
+            stroke="#0891b2"
+            strokeWidth={1.5}
+            strokeDasharray="5 5"
+            label={{ value: 'Retirement', position: 'insideTopRight', fontSize: 11, fill: '#0891b2' }}
+          />
+        )}
       </AreaChart>
     </ResponsiveContainer>
   );
