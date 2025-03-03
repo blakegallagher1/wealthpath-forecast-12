@@ -71,7 +71,7 @@ const IncomeSourcesTab = ({ plan }: IncomeSourcesTabProps) => {
           )}
         </div>
         
-        <div className="h-96">
+        <div className="h-[400px]">
           {incomeSourcesData.length > 0 ? (
             <IncomeSourcesChart data={incomeSourcesData} />
           ) : (

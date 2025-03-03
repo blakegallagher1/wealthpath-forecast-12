@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import WithdrawalStrategyChart from "../charts/WithdrawalStrategyChart";
@@ -53,7 +52,7 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="h-80">
+        <CardContent className="h-[400px]">
           <WithdrawalStrategyChart data={plan.withdrawalStrategyData} />
         </CardContent>
       </Card>
