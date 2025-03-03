@@ -89,7 +89,7 @@ export const generateDebtPayoffData = (inputs: CalculatorInputs): DebtPayoffData
       monthlyMortgagePayment = calculateMonthlyMortgagePayment(
         mortgageBalance,
         mortgageRate,
-        mortgageYearsRemaining
+        30 // New 30-year mortgage
       );
       
       annualMortgagePayment = monthlyMortgagePayment * 12;

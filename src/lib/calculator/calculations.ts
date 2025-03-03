@@ -1,4 +1,3 @@
-
 import { calculateNetWorthProjection } from "./netWorthCalculator";
 import { generateIncomeSourcesData } from "./incomeSourcesCalculator";
 import { generateWithdrawalStrategyData } from "./withdrawalStrategyCalculator";
@@ -103,7 +102,7 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
   const incomeSourcesData = generateIncomeSourcesData(inputs);
   const withdrawalStrategyData = generateWithdrawalStrategyData(inputs);
   const riskProfileData = generateRiskProfileData(inputs);
-  // We'll reuse the already calculated socialSecurityData
+  const socialSecurityData = generateSocialSecurityData(inputs);
   const debtPayoffData = generateDebtPayoffData(inputs);
   
   return {
@@ -119,5 +118,6 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
     riskProfileData,
     socialSecurityData,
     debtPayoffData,
+    inputs,
   };
 };

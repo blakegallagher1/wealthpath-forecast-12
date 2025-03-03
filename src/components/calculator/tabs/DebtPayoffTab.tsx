@@ -23,13 +23,6 @@ const DebtPayoffTab = ({ plan }: DebtPayoffTabProps) => {
   // Get initial total debt
   const initialDebt = plan.debtPayoffData[0]?.totalDebt || 0;
   
-  // Calculate estimated duration for mortgage payoff
-  const mortgageStartPoint = plan.debtPayoffData[0];
-  const mortgageEndPoint = plan.debtPayoffData.find(point => point.mortgageBalance === 0);
-  const mortgagePayoffYears = mortgageEndPoint && mortgageStartPoint 
-    ? mortgageEndPoint.age - mortgageStartPoint.age 
-    : null;
-
   // Get information about planned home purchase
   const homePurchasePlanned = plan.inputs?.planningHomePurchase || false;
   const homePurchaseYear = plan.inputs?.homePurchaseYear || 0;
@@ -41,10 +34,39 @@ const DebtPayoffTab = ({ plan }: DebtPayoffTabProps) => {
   const purchasePoint = homePurchasePlanned 
     ? plan.debtPayoffData.find(point => point.year === homePurchaseYear)
     : null;
-    
+  
+  // Get initial mortgage balance
+  const initialMortgageBalance = plan.debtPayoffData[0]?.mortgageBalance || 0;
+  
+  // Get current mortgage balance (either initial or from purchase point)
+  const currentMortgageBalance = initialMortgageBalance;
+  
   // Calculate estimated home value (assuming 20% down payment)
   const estimatedHomeValue = homeDownPayment * 5; // 20% down payment
   const newMortgageAmount = purchasePoint ? purchasePoint.mortgageBalance : 0;
+  
+  // Calculate mortgage end point and payoff years
+  let mortgageEndPoint = null;
+  let mortgagePayoffYears = null;
+  
+  if (homePurchasePlanned && purchasePoint) {
+    // For planned purchases, calculate from purchase point
+    mortgageEndPoint = plan.debtPayoffData
+      .filter(point => point.year >= homePurchaseYear)
+      .find(point => point.mortgageBalance === 0);
+      
+    if (mortgageEndPoint && purchasePoint) {
+      mortgagePayoffYears = mortgageEndPoint.age - purchasePoint.age;
+    }
+  } else if (initialMortgageBalance > 0) {
+    // For existing mortgages
+    const mortgageStartPoint = plan.debtPayoffData[0];
+    mortgageEndPoint = plan.debtPayoffData.find(point => point.mortgageBalance === 0);
+    
+    if (mortgageEndPoint && mortgageStartPoint) {
+      mortgagePayoffYears = mortgageEndPoint.age - mortgageStartPoint.age;
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -83,7 +105,9 @@ const DebtPayoffTab = ({ plan }: DebtPayoffTabProps) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(mortgageStartPoint?.mortgageBalance || 0)}
+              {homePurchasePlanned && initialMortgageBalance === 0
+                ? formatCurrency(newMortgageAmount) 
+                : formatCurrency(initialMortgageBalance)}
             </div>
             {mortgagePayoffYears && (
               <p className="text-sm text-muted-foreground mt-2">
@@ -114,15 +138,15 @@ const DebtPayoffTab = ({ plan }: DebtPayoffTabProps) => {
           <CardContent>
             <div className="text-2xl font-bold">
               {formatCurrency(
-                (mortgageStartPoint?.studentLoanBalance || 0) +
-                (mortgageStartPoint?.autoLoanBalance || 0) +
-                (mortgageStartPoint?.creditCardBalance || 0)
+                (plan.debtPayoffData[0]?.studentLoanBalance || 0) +
+                (plan.debtPayoffData[0]?.autoLoanBalance || 0) +
+                (plan.debtPayoffData[0]?.creditCardBalance || 0)
               )}
             </div>
             <div className="text-xs text-muted-foreground mt-2 space-y-1">
-              <div>Student Loans: {formatCurrency(mortgageStartPoint?.studentLoanBalance || 0)}</div>
-              <div>Auto Loans: {formatCurrency(mortgageStartPoint?.autoLoanBalance || 0)}</div>
-              <div>Credit Cards: {formatCurrency(mortgageStartPoint?.creditCardBalance || 0)}</div>
+              <div>Student Loans: {formatCurrency(plan.debtPayoffData[0]?.studentLoanBalance || 0)}</div>
+              <div>Auto Loans: {formatCurrency(plan.debtPayoffData[0]?.autoLoanBalance || 0)}</div>
+              <div>Credit Cards: {formatCurrency(plan.debtPayoffData[0]?.creditCardBalance || 0)}</div>
             </div>
           </CardContent>
         </Card>
