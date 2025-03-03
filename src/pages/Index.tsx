@@ -37,11 +37,6 @@ const Index = () => {
       taxableInvestments: 3000,
       realEstateEquity: 0,
       annual401kContribution: 0,
-      
-      // Liabilities
-      mortgageBalance: 0,
-      autoLoanBalance: 0,
-      creditCardBalance: 0,
     };
     
     setCalculatorInputs(testData);

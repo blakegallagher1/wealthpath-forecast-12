@@ -11,19 +11,19 @@ interface IncomeSourcesTabProps {
 
 const IncomeSourcesTab = ({ plan }: IncomeSourcesTabProps) => {
   // Calculate the total expected retirement income
-  const retirementIncomeData = plan.incomeSourcesData.find(data => data.isRetirementAge);
+  const retirementIncomeData = plan?.incomeSourcesData?.find(data => data.isRetirementAge) || null;
   const totalRetirementIncome = retirementIncomeData?.total || 0;
   
   // Find social security starting age data point
-  const ssStartingPoint = plan.incomeSourcesData.find(data => data.socialSecurity > 0);
-  const ssStartAge = ssStartingPoint?.age;
+  const ssStartingPoint = plan?.incomeSourcesData?.find(data => (data.socialSecurity || 0) > 0) || null;
+  const ssStartAge = ssStartingPoint?.age || 0;
   
   // Calculate primary vs spouse income
-  const primaryWorkingIncome = plan.incomeSourcesData.find(data => data.primaryIncome > 0)?.primaryIncome || 0;
-  const spouseWorkingIncome = plan.incomeSourcesData.find(data => data.spouseIncome > 0)?.spouseIncome || 0;
+  const primaryWorkingIncome = plan?.incomeSourcesData?.find(data => (data.primaryIncome || 0) > 0)?.primaryIncome || 0;
+  const spouseWorkingIncome = plan?.incomeSourcesData?.find(data => (data.spouseIncome || 0) > 0)?.spouseIncome || 0;
   
   // Summarize data
-  const hasSpouseIncome = plan.incomeSourcesData.some(data => data.spouseIncome > 0);
+  const hasSpouseIncome = plan?.incomeSourcesData?.some(data => (data.spouseIncome || 0) > 0) || false;
   
   return (
     <Card>
@@ -31,7 +31,7 @@ const IncomeSourcesTab = ({ plan }: IncomeSourcesTabProps) => {
         <CardTitle>Income Sources Through Retirement</CardTitle>
         <CardDescription>
           Visualizing the transition from working income to retirement income
-          {ssStartAge && <span className="block mt-1 text-sm">Social Security begins at age {ssStartAge}</span>}
+          {ssStartAge > 0 && <span className="block mt-1 text-sm">Social Security begins at age {ssStartAge}</span>}
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
             <div className="text-sm">
@@ -54,7 +54,13 @@ const IncomeSourcesTab = ({ plan }: IncomeSourcesTabProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="h-80">
-        <IncomeSourcesChart data={plan.incomeSourcesData} />
+        {plan?.incomeSourcesData && plan.incomeSourcesData.length > 0 ? (
+          <IncomeSourcesChart data={plan.incomeSourcesData} />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground">No income source data available</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
