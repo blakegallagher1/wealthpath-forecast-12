@@ -18,8 +18,8 @@ const VerificationScreen = ({ onVerify, onCancel }: VerificationScreenProps) => 
       className="py-4"
     >
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-center">Personal Retirement Calculator</h2>
-        <p className="text-center text-neutral-600 mt-2">
+        <h2 className="text-xl font-semibold text-center dark:text-white">Personal Retirement Calculator</h2>
+        <p className="text-center text-neutral-600 dark:text-neutral-300 mt-2">
           Click continue to see your personalized retirement analysis.
         </p>
       </div>
