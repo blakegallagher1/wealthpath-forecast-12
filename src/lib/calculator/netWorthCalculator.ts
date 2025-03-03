@@ -13,5 +13,14 @@ export const calculateNetWorthProjection = (
   inputs: CalculatorInputs, 
   lifeEventImpact: number
 ): NetWorthDataPoint[] => {
+  if (!inputs) {
+    throw new Error("Calculator inputs are required");
+  }
+  
+  if (isNaN(lifeEventImpact)) {
+    // Default to zero if impact is not a number
+    lifeEventImpact = 0;
+  }
+  
   return calculateNetWorthProjectionImpl(inputs, lifeEventImpact);
 };

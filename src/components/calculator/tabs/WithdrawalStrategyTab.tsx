@@ -32,9 +32,9 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
   const retirementAge = retirementData?.age || 65;
   
   // Calculate portfolio longevity in years for each strategy
-  const aggressiveLongevity = aggressiveDepletionAge ? aggressiveDepletionAge - retirementAge : 30;
-  const moderateLongevity = moderateDepletionAge ? moderateDepletionAge - retirementAge : 30;
-  const conservativeLongevity = conservativeDepletionAge ? conservativeDepletionAge - retirementAge : 30;
+  const aggressiveLongevity = calculateLongevity(aggressiveDepletionAge, retirementAge);
+  const moderateLongevity = calculateLongevity(moderateDepletionAge, retirementAge);
+  const conservativeLongevity = calculateLongevity(conservativeDepletionAge, retirementAge);
 
   return (
     <div className="space-y-6">

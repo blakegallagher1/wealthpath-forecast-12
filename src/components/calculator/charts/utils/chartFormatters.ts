@@ -1,46 +1,54 @@
+
+import { WithdrawalStrategyDataPoint } from "@/lib/calculator/types";
+
 /**
- * Utility functions for chart formatting
+ * Finds the age at which the portfolio is depleted for a given strategy
+ * @param data Array of withdrawal strategy data points
+ * @param strategy The strategy to analyze ("conservative", "moderate", or "aggressive")
+ * @returns The age at which the portfolio is depleted, or null if not depleted
  */
-
-// Format currency for tooltips and other displays
-export const formatChartCurrency = (value: number) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(value);
+export const findDepletionAge = (
+  data: WithdrawalStrategyDataPoint[],
+  strategy: "conservative" | "moderate" | "aggressive"
+): number | null => {
+  // Find first data point where balance is zero or nearly zero (less than $1000)
+  const depletionPoint = data.find(point => point[strategy] < 1000);
+  return depletionPoint ? depletionPoint.age : null;
 };
 
-// Find depletion age (when balance hits zero or very low)
-export const findDepletionAge = (data: any[], key: 'aggressive' | 'moderate' | 'conservative') => {
-  if (!data || data.length === 0) return null;
-  
-  // Consider "depleted" when balance falls below 1% of maximum value
-  const maxValue = Math.max(...data.map(d => d[key]));
-  const threshold = maxValue * 0.01;
-  
-  // Find the last age where balance is above threshold
-  for (let i = data.length - 1; i >= 0; i--) {
-    if (data[i][key] > threshold) {
-      // If this is the last data point, the portfolio hasn't depleted
-      if (i === data.length - 1) return null;
-      // Otherwise return the next age
-      return data[i].age;
-    }
+/**
+ * Calculates the longevity of a portfolio in years based on retirement age
+ * @param depletionAge The age at which the portfolio is depleted
+ * @param retirementAge The age at which retirement begins
+ * @returns The number of years the portfolio is expected to last
+ */
+export const calculateLongevity = (
+  depletionAge: number | null,
+  retirementAge: number
+): number => {
+  return depletionAge ? depletionAge - retirementAge : 30;
+};
+
+/**
+ * Formats a percentage value for display
+ * @param value The percentage value to format
+ * @returns Formatted percentage string with 1 decimal place
+ */
+export const formatPercentage = (value: number): string => {
+  return `${value.toFixed(1)}%`;
+};
+
+/**
+ * Formats a currency value for chart tooltips
+ * @param value The currency value to format
+ * @returns Formatted currency string
+ */
+export const formatCurrencyForTooltip = (value: number): string => {
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(2)}M`;
+  } else if (value >= 1000) {
+    return `$${(value / 1000).toFixed(0)}K`;
+  } else {
+    return `$${value.toFixed(0)}`;
   }
-  
-  return null;
-};
-
-// Format percent with specified decimal places
-export const formatPercent = (value: number, decimals: number = 1) => {
-  return `${value.toFixed(decimals)}%`;
-};
-
-// Calculate expected longevity given retirement age and depletion age
-export const calculateLongevity = (retirementAge: number, depletionAge: number | null) => {
-  if (!depletionAge) return "30+ years";
-  const longevity = depletionAge - retirementAge;
-  return `${longevity} years`;
 };

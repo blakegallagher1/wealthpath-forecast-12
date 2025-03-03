@@ -44,15 +44,15 @@ export function generateWithdrawalStrategyData(inputs: CalculatorInputs): Withdr
   
   // Portfolio returns during retirement (based on allocation)
   const postRetirementReturns = {
-    conservative: portfolioAllocations.conservative.stocks * returnRate + 
+    conservative: (portfolioAllocations.conservative.stocks * returnRate + 
                   portfolioAllocations.conservative.bonds * (returnRate * 0.4) +
-                  portfolioAllocations.conservative.cash * 0.01,
-    moderate: portfolioAllocations.moderate.stocks * returnRate +
+                  portfolioAllocations.conservative.cash * 0.01) - inflationRate,
+    moderate: (portfolioAllocations.moderate.stocks * returnRate +
              portfolioAllocations.moderate.bonds * (returnRate * 0.4) +
-             portfolioAllocations.moderate.cash * 0.01,
-    aggressive: portfolioAllocations.aggressive.stocks * returnRate +
+             portfolioAllocations.moderate.cash * 0.01) - inflationRate,
+    aggressive: (portfolioAllocations.aggressive.stocks * returnRate +
                portfolioAllocations.aggressive.bonds * (returnRate * 0.4) +
-               portfolioAllocations.aggressive.cash * 0.01
+               portfolioAllocations.aggressive.cash * 0.01) - inflationRate
   };
   
   // Initialize account balances for each strategy
@@ -73,19 +73,36 @@ export function generateWithdrawalStrategyData(inputs: CalculatorInputs): Withdr
     } else {
       // Post-retirement: apply different withdrawal rates and returns
       const yearsSinceRetirement = age - retirementAge;
+      
+      // Calculate initial withdrawal amounts at retirement
+      const initialConservativeWithdrawal = isRetirementAge ? conservativeBalance * conservativeRate : 0;
+      const initialModerateWithdrawal = isRetirementAge ? moderateBalance * moderateRate : 0;
+      const initialAggressiveWithdrawal = isRetirementAge ? aggressiveBalance * aggressiveRate : 0;
+      
+      // Store initial withdrawals for inflation adjustment in subsequent years
+      if (isRetirementAge) {
+        data.initialConservativeWithdrawal = initialConservativeWithdrawal;
+        data.initialModerateWithdrawal = initialModerateWithdrawal;
+        data.initialAggressiveWithdrawal = initialAggressiveWithdrawal;
+      }
+      
+      // Inflation adjustment for withdrawals in subsequent years
       const inflationMultiplier = Math.pow(1 + inflationRate, yearsSinceRetirement);
       
-      // Calculate inflation-adjusted withdrawal amounts (fixed percentage of initial balance)
-      const initialConservativeWithdrawal = estimatedRetirementSavings * conservativeRate;
-      const initialModerateWithdrawal = estimatedRetirementSavings * moderateRate;
-      const initialAggressiveWithdrawal = estimatedRetirementSavings * aggressiveRate;
+      // Calculate the actual withdrawal for this year (inflation-adjusted)
+      const conservativeWithdrawal = yearsSinceRetirement === 0 
+        ? initialConservativeWithdrawal 
+        : (data.initialConservativeWithdrawal || 0) * inflationMultiplier;
       
-      // Adjust withdrawals for inflation
-      const conservativeWithdrawal = initialConservativeWithdrawal * inflationMultiplier;
-      const moderateWithdrawal = initialModerateWithdrawal * inflationMultiplier;
-      const aggressiveWithdrawal = initialAggressiveWithdrawal * inflationMultiplier;
+      const moderateWithdrawal = yearsSinceRetirement === 0 
+        ? initialModerateWithdrawal 
+        : (data.initialModerateWithdrawal || 0) * inflationMultiplier;
       
-      // Apply withdrawals and returns to each strategy
+      const aggressiveWithdrawal = yearsSinceRetirement === 0 
+        ? initialAggressiveWithdrawal 
+        : (data.initialAggressiveWithdrawal || 0) * inflationMultiplier;
+      
+      // Apply withdrawals and real returns (already adjusted for inflation)
       conservativeBalance = Math.max(0, (conservativeBalance - conservativeWithdrawal) * 
                                     (1 + postRetirementReturns.conservative));
       
