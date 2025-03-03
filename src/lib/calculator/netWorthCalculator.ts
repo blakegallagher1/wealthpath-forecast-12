@@ -1,4 +1,3 @@
-
 import { CalculatorInputs, NetWorthDataPoint } from "./types";
 
 export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventImpact: number) => {
@@ -21,17 +20,30 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
   let annualSavings = (inputs.annualIncome + inputs.spouseIncome + inputs.annualBonusAmount) - annualExpenses - 
                       inputs.annual401kContribution - inputs.annualRothContribution - inputs.annualTaxableContribution;
   
-  // Assuming 30-year mortgage, calculate annual principal payment (simplified)
-  const annualMortgagePayment = mortgageBalance > 0 ? mortgageBalance / 30 : 0;
+  // Calculate annual mortgage principal payment based on remaining balance and years
+  // Assuming 30-year mortgage total term
+  const mortgageYearsRemaining = mortgageBalance > 0 ? 30 : 0;
+  let annualMortgagePayment = mortgageBalance > 0 ? mortgageBalance / mortgageYearsRemaining : 0;
+  
+  // Calculate real estate appreciation rate (default 3% if not specified)
+  const realEstateAppreciationRate = 0.03; // 3% annual appreciation
+  
+  // Variables for planned home purchase
+  const planningHomePurchase = inputs.planningHomePurchase;
+  const homePurchaseYear = inputs.planningHomePurchase ? inputs.homePurchaseYear : 0;
+  const homeDownPayment = inputs.homeDownPayment;
   
   // Life events tracking
   const weddingYear = inputs.planningWedding ? inputs.weddingYear : 0;
-  const homePurchaseYear = inputs.planningHomePurchase ? inputs.homePurchaseYear : 0;
   const childrenStart = inputs.planningChildren ? currentYear + 1 : 0; // Assuming children costs start next year
   
+  // Keep track of home value separate from equity
+  let homeValue = realEstateEquity + mortgageBalance;
+  
   for (let year = 0; year < projectionYears; year++) {
-    const currentNetWorth = cashSavings + retirementAccounts + rothAccounts + taxableInvestments + realEstateEquity - mortgageBalance - otherDebts;
     const projectedYear = currentYear + year;
+    const currentNetWorth = cashSavings + retirementAccounts + rothAccounts + taxableInvestments + 
+                            realEstateEquity - mortgageBalance - otherDebts;
     
     // Format the data to match NetWorthDataPoint requirements
     data.push({
@@ -54,11 +66,24 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
     }
     
     // Home purchase in the purchase year
-    if (homePurchaseYear === projectedYear) {
-      yearlyLifeEventCosts += inputs.homeDownPayment;
-      realEstateEquity += inputs.homeDownPayment; // Down payment becomes equity
-      // Assuming new mortgage is about 4x down payment (80% LTV)
-      mortgageBalance += inputs.homeDownPayment * 4;
+    if (planningHomePurchase && homePurchaseYear === projectedYear) {
+      // Calculate full home value based on down payment (assuming 20% down payment)
+      const fullHomeValue = homeDownPayment * 5; // Down payment is 20% of home value
+      
+      // Set initial equity to down payment amount
+      realEstateEquity += homeDownPayment;
+      
+      // Set new mortgage to 80% of home value
+      mortgageBalance += (fullHomeValue - homeDownPayment);
+      
+      // Update home value
+      homeValue += fullHomeValue;
+      
+      // Take down payment from cash savings
+      yearlyLifeEventCosts += homeDownPayment;
+      
+      // Recalculate annual mortgage payment (assuming 30-year mortgage)
+      annualMortgagePayment = mortgageBalance / 30;
     }
     
     // Children costs for 18 years per child
@@ -84,12 +109,21 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
       // Update cash with remaining savings (after life events)
       cashSavings = Math.max(0, cashSavings + annualSavings);
       
-      // Reduce debts
-      mortgageBalance = Math.max(0, mortgageBalance - annualMortgagePayment);
-      otherDebts = Math.max(0, otherDebts * 0.8); // Simple assumption: 20% of other debt paid off each year
-      
       // Real estate appreciation
-      realEstateEquity *= (1 + 0.03); // Assuming 3% annual appreciation
+      homeValue *= (1 + realEstateAppreciationRate);
+      
+      // Mortgage payment - part goes to principal (increasing equity)
+      if (mortgageBalance > 0) {
+        const principalPayment = Math.min(annualMortgagePayment, mortgageBalance);
+        mortgageBalance -= principalPayment;
+        realEstateEquity = homeValue - mortgageBalance;
+      } else {
+        // If mortgage is paid off, all home value is equity
+        realEstateEquity = homeValue;
+      }
+      
+      // Reduce other debts
+      otherDebts = Math.max(0, otherDebts * 0.8); // Simple assumption: 20% of other debt paid off each year
     } else {
       // Post-retirement: Drawing down accounts
       const withdrawalRate = inputs.retirementWithdrawalRate / 100;
@@ -133,12 +167,21 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
         cashSavings = Math.max(0, cashSavings - withdrawalNeeded);
       }
       
-      // Continue reducing debts
-      mortgageBalance = Math.max(0, mortgageBalance - annualMortgagePayment);
-      otherDebts = Math.max(0, otherDebts * 0.8);
-      
       // Real estate appreciation continues
-      realEstateEquity *= (1 + 0.03);
+      homeValue *= (1 + realEstateAppreciationRate);
+      
+      // Continue mortgage payments in retirement
+      if (mortgageBalance > 0) {
+        const principalPayment = Math.min(annualMortgagePayment, mortgageBalance);
+        mortgageBalance -= principalPayment;
+        realEstateEquity = homeValue - mortgageBalance;
+      } else {
+        // If mortgage is paid off, all home value is equity
+        realEstateEquity = homeValue;
+      }
+      
+      // Continue reducing other debts
+      otherDebts = Math.max(0, otherDebts * 0.8);
     }
     
     // Age increases with each year
