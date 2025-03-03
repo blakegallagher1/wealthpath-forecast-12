@@ -1,3 +1,4 @@
+
 export interface CalculatorInputs {
   // Personal details
   name: string;
@@ -75,7 +76,8 @@ export interface NetWorthDataPoint {
 export interface IncomeSourcesDataPoint {
   age: number;
   year?: number;
-  employment: number;
+  primaryIncome: number;
+  spouseIncome: number;
   socialSecurity: number;
   retirement: number;
   pension: number;

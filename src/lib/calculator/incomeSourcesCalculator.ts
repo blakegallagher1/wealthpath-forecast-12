@@ -1,4 +1,3 @@
-
 import { CalculatorInputs, IncomeSourcesDataPoint } from "./types";
 
 export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourcesDataPoint[] {
@@ -24,7 +23,8 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
     const year = new Date().getFullYear() + (age - currentAge);
     const isRetirementAge = age === retirementAge;
     
-    let employment = 0;
+    let primaryIncome = 0;
+    let spouseIncome = 0;
     let socialSecurity = 0;
     let retirement = 0;
     let pension = 0;
@@ -34,33 +34,27 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
     // Calculate corresponding spouse age for this year
     const spouseCurrentAge = spouseAge ? age - currentAge + spouseAge : 0;
     
+    // Calculate primary income (before retirement)
     if (age < retirementAge) {
-      // Pre-retirement: employment income with growth
       const yearsWorking = age - currentAge;
-      employment = (inputs.annualIncome || 0) * Math.pow(1 + incomeGrowthRate, yearsWorking);
-      employment = Math.min(employment, 400000); // Cap at $400K
-      
-      // Add spouse income if applicable - but only until spouse's retirement age
-      if (inputs.spouseIncome && inputs.spouseIncome > 0 && spouseAge) {
-        if (spouseCurrentAge < spouseRetirementAge) {
-          const spouseYearsWorking = spouseCurrentAge - spouseAge + (currentAge - spouseAge);
-          const spouseIncome = inputs.spouseIncome * Math.pow(1 + spouseIncomeGrowthRate, spouseYearsWorking);
-          employment += Math.min(spouseIncome, 400000);
-        }
-      }
-    } else {
-      // Post-retirement income sources
-      
-      // If primary person is retired but spouse is still working
-      if (inputs.spouseIncome && inputs.spouseIncome > 0 && spouseAge && spouseCurrentAge < spouseRetirementAge) {
+      primaryIncome = (inputs.annualIncome || 0) * Math.pow(1 + incomeGrowthRate, yearsWorking);
+      primaryIncome = Math.min(primaryIncome, 400000); // Cap at $400K
+    }
+    
+    // Calculate spouse income (before spouse's retirement)
+    if (inputs.spouseIncome && inputs.spouseIncome > 0 && spouseAge) {
+      if (spouseCurrentAge < spouseRetirementAge) {
         const spouseYearsWorking = spouseCurrentAge - spouseAge + (currentAge - spouseAge);
-        const spouseIncome = inputs.spouseIncome * Math.pow(1 + spouseIncomeGrowthRate, spouseYearsWorking);
-        employment += Math.min(spouseIncome, 400000);
+        spouseIncome = inputs.spouseIncome * Math.pow(1 + spouseIncomeGrowthRate, spouseYearsWorking);
+        spouseIncome = Math.min(spouseIncome, 400000); // Cap at $400K
       }
-      
+    }
+    
+    // Post-retirement income sources
+    if (age >= retirementAge) {
       // Social Security (starts at SS age)
       if (age >= ssStartAge) {
-        // Base Social Security on income or specified benefit
+        // Base Social Security on specified benefit
         socialSecurity = inputs.socialSecurityBenefit || 0;
         
         // Add spouse SS if applicable and if spouse has reached SS age
@@ -78,7 +72,6 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
       }
       
       // For retirement savings, calculate withdrawals based on the projected savings
-      // This should align with the calculations in calculateRetirementPlan
       const yearsIntoRetirement = age - retirementAge;
       
       // Adjusting for inflation erosion in a simplified way
@@ -102,12 +95,13 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
       }
     }
     
-    const total = employment + socialSecurity + retirement + pension + rmd + taxable;
+    const total = primaryIncome + spouseIncome + socialSecurity + retirement + pension + rmd + taxable;
     
     data.push({
       age,
       year,
-      employment,
+      primaryIncome,
+      spouseIncome,
       socialSecurity,
       retirement,
       pension,

@@ -13,12 +13,13 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
   const isDark = resolvedTheme === "dark";
 
   const colors = useMemo(() => ({
-    employment: "#3b82f6",
-    socialSecurity: "#8b5cf6",
-    retirement: "#ec4899",
-    pension: "#10b981",
-    rmd: "#f59e0b", // Added color for RMDs
-    taxable: "#06b6d4", // Added color for taxable account withdrawals
+    primaryIncome: "#3b82f6",  // Blue for primary income
+    spouseIncome: "#6366f1",   // Indigo for spouse income
+    socialSecurity: "#8b5cf6", // Purple for social security
+    retirement: "#ec4899",     // Pink for retirement
+    pension: "#10b981",        // Green for pension
+    rmd: "#f59e0b",            // Amber for RMDs
+    taxable: "#06b6d4",        // Cyan for taxable withdrawals
     grid: isDark ? "#333" : "#e5e5e5",
     text: isDark ? "#ccc" : "#666",
   }), [isDark]);
@@ -72,11 +73,19 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
         <Legend wrapperStyle={{ fontSize: "12px" }} />
         <Area
           type="monotone"
-          dataKey="employment"
+          dataKey="primaryIncome"
           stackId="1"
-          stroke={colors.employment}
-          fill={colors.employment}
-          name="Employment Income"
+          stroke={colors.primaryIncome}
+          fill={colors.primaryIncome}
+          name="Primary Income"
+        />
+        <Area
+          type="monotone"
+          dataKey="spouseIncome"
+          stackId="1"
+          stroke={colors.spouseIncome}
+          fill={colors.spouseIncome}
+          name="Spouse Income"
         />
         <Area
           type="monotone"
