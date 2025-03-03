@@ -141,6 +141,9 @@ export interface RetirementPlan {
   socialSecurityData: SocialSecurityDataPoint[];
   debtPayoffData: DebtPayoffDataPoint[];
   
+  // User inputs (added for access in components)
+  inputs?: CalculatorInputs;
+  
   // Recommendations
   recommendations: string[];
 }

@@ -1,5 +1,6 @@
 
 import { CalculatorInputs, DebtPayoffDataPoint } from "./types";
+import { calculateMonthlyMortgagePayment, processMortgagePayment } from "./utils/mortgageUtils";
 
 // Generate debt payoff timeline data
 export const generateDebtPayoffData = (inputs: CalculatorInputs): DebtPayoffDataPoint[] => {
@@ -16,18 +17,13 @@ export const generateDebtPayoffData = (inputs: CalculatorInputs): DebtPayoffData
   // Calculate mortgage payment using amortization formula
   const mortgageRate = inputs.mortgageInterestRate / 100;
   const mortgageYearsRemaining = 30; // Standard 30-year mortgage
-  const monthlyRate = mortgageRate / 12;
-  const numberOfPayments = mortgageYearsRemaining * 12;
   
-  // Calculate monthly mortgage payment using the amortization formula
-  // P = L[c(1 + c)^n]/[(1 + c)^n - 1]
-  // where P = payment, L = loan amount, c = monthly interest rate, n = number of payments
-  let monthlyMortgagePayment = 0;
-  if (mortgageBalance > 0 && mortgageRate > 0) {
-    monthlyMortgagePayment = mortgageBalance * 
-                            (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
-                            (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
-  }
+  // Calculate monthly mortgage payment
+  let monthlyMortgagePayment = calculateMonthlyMortgagePayment(
+    mortgageBalance,
+    mortgageRate,
+    mortgageYearsRemaining
+  );
   
   let annualMortgagePayment = monthlyMortgagePayment * 12;
   
@@ -90,12 +86,13 @@ export const generateDebtPayoffData = (inputs: CalculatorInputs): DebtPayoffData
       mortgageBalance += newMortgage;
       
       // Recalculate mortgage payment with new balance
-      if (mortgageBalance > 0 && mortgageRate > 0) {
-        monthlyMortgagePayment = mortgageBalance * 
-                                (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
-                                (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
-        annualMortgagePayment = monthlyMortgagePayment * 12;
-      }
+      monthlyMortgagePayment = calculateMonthlyMortgagePayment(
+        mortgageBalance,
+        mortgageRate,
+        mortgageYearsRemaining
+      );
+      
+      annualMortgagePayment = monthlyMortgagePayment * 12;
     }
     
     // Calculate total debt for this year
@@ -115,14 +112,11 @@ export const generateDebtPayoffData = (inputs: CalculatorInputs): DebtPayoffData
     
     // Mortgage amortization calculation
     if (mortgageBalance > 0) {
-      // Calculate interest portion of payment
-      const annualInterest = mortgageBalance * mortgageRate;
-      
-      // Calculate principal portion of payment
-      const principalPayment = Math.min(annualMortgagePayment - annualInterest, mortgageBalance);
-      
-      // Update mortgage balance
-      mortgageBalance = Math.max(0, mortgageBalance - principalPayment);
+      mortgageBalance = processMortgagePayment(
+        mortgageBalance,
+        mortgageRate,
+        annualMortgagePayment
+      );
     }
     
     // Student loan amortization

@@ -1,4 +1,3 @@
-
 import { calculateNetWorthProjection } from "./netWorthCalculator";
 import { generateIncomeSourcesData } from "./incomeSourcesCalculator";
 import { generateWithdrawalStrategyData } from "./withdrawalStrategyCalculator";
@@ -70,5 +69,6 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
     riskProfileData,
     socialSecurityData,
     debtPayoffData,
+    inputs: inputs, // Add this line to include the inputs in the RetirementPlan
   };
 };

@@ -30,6 +30,22 @@ const DebtPayoffTab = ({ plan }: DebtPayoffTabProps) => {
     ? mortgageEndPoint.age - mortgageStartPoint.age 
     : null;
 
+  // Get information about planned home purchase
+  const homePurchasePlanned = plan.inputs?.planningHomePurchase || false;
+  const homePurchaseYear = plan.inputs?.homePurchaseYear || 0;
+  const homeDownPayment = plan.inputs?.homeDownPayment || 0;
+  const currentYear = new Date().getFullYear();
+  const yearsUntilPurchase = homePurchaseYear > currentYear ? homePurchaseYear - currentYear : 0;
+  
+  // Find the point where mortgage increases due to home purchase
+  const purchasePoint = homePurchasePlanned 
+    ? plan.debtPayoffData.find(point => point.year === homePurchaseYear)
+    : null;
+    
+  // Calculate estimated home value (assuming 20% down payment)
+  const estimatedHomeValue = homeDownPayment * 5; // 20% down payment
+  const newMortgageAmount = purchasePoint ? purchasePoint.mortgageBalance : 0;
+
   return (
     <div className="space-y-6">
       <Card>
@@ -73,6 +89,20 @@ const DebtPayoffTab = ({ plan }: DebtPayoffTabProps) => {
               <p className="text-sm text-muted-foreground mt-2">
                 Estimated payoff in {mortgagePayoffYears} years
               </p>
+            )}
+            
+            {homePurchasePlanned && (
+              <div className="mt-2 pt-2 border-t border-gray-100">
+                <p className="text-sm font-medium">Planned Home Purchase:</p>
+                <div className="text-xs text-muted-foreground space-y-1 mt-1">
+                  <div>Year: {homePurchaseYear} ({yearsUntilPurchase} years from now)</div>
+                  <div>Down payment: {formatCurrency(homeDownPayment)}</div>
+                  <div>Estimated home value: {formatCurrency(estimatedHomeValue)}</div>
+                  {purchasePoint && (
+                    <div>New mortgage: {formatCurrency(newMortgageAmount)}</div>
+                  )}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
