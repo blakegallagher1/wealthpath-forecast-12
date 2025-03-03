@@ -1,3 +1,4 @@
+
 export interface CalculatorInputs {
   // Personal details
   name: string;
@@ -31,6 +32,7 @@ export interface CalculatorInputs {
   annualTaxableContribution: number;
   investmentReturnRate: number;
   riskProfile: string;
+  realEstateAppreciationRate: number; // Added real estate appreciation rate
   
   // Liabilities
   mortgageBalance: number;

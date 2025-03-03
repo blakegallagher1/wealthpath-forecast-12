@@ -30,6 +30,8 @@ const generateMarketReturn = (baseReturn: number, volatility: number): number =>
  * @param cashSavings Current cash savings
  * @param annualSavings Annual savings amount
  * @param marketCycle Current market cycle factor (-1 to 1, where negative is bear market)
+ * @param retirementWithdrawalAmount Amount to withdraw in retirement
+ * @param retirementIncome Other retirement income (SS, pension)
  * @returns Updated values for all investment accounts and the new market cycle
  */
 export const calculateInvestmentGrowth = (
@@ -40,7 +42,9 @@ export const calculateInvestmentGrowth = (
   taxableInvestments: number,
   cashSavings: number,
   annualSavings: number,
-  marketCycle: number
+  marketCycle: number,
+  retirementWithdrawalAmount: number = 0,
+  retirementIncome: number = 0
 ): {
   retirementAccounts: number;
   rothAccounts: number;
@@ -104,32 +108,15 @@ export const calculateInvestmentGrowth = (
   } 
   // Post-retirement: Drawing down accounts
   else {
-    const withdrawalRate = inputs.retirementWithdrawalRate / 100;
-    
     // Sequence of returns risk: more conservative returns in early retirement
     const retirementYears = age - inputs.retirementAge;
     const sequenceRiskFactor = Math.min(1.0, (retirementYears + 5) / 15); // First 10 years of retirement have reduced returns
     const adjustedReturnRate = actualReturnRate * sequenceRiskFactor;
     
-    // Social Security and pension income
-    let retirementIncome = 0;
-    if (age >= inputs.ssStartAge) {
-      retirementIncome += inputs.socialSecurityBenefit * 12;
-      // Add spouse social security if applicable
-      if (inputs.spouseName && inputs.spouseAge && age - inputs.currentAge + inputs.spouseAge >= inputs.ssStartAge) {
-        retirementIncome += inputs.spouseSocialSecurityBenefit * 12;
-      }
-    }
+    // Calculate withdrawal needed
+    const withdrawalNeeded = retirementWithdrawalAmount;
     
-    // Add pension if applicable
-    if (inputs.hasPension) {
-      retirementIncome += inputs.pensionAmount;
-    }
-    
-    // Calculate withdrawal needed after accounting for SS and pension
-    const withdrawalNeeded = Math.max(0, inputs.retirementAnnualSpending - retirementIncome);
-    
-    // Determine withdrawal from each account (simplified strategy)
+    // Determine withdrawal from each account (smart withdrawal strategy)
     const totalInvestments = retirementAccounts + rothAccounts + taxableInvestments;
     
     let newRetirementAccounts = retirementAccounts;
@@ -138,11 +125,13 @@ export const calculateInvestmentGrowth = (
     let newCashSavings = cashSavings;
     
     if (totalInvestments > 0) {
-      // Smart withdrawal strategy - prioritize taxable accounts first
-      const taxableWithdrawal = Math.min(taxableInvestments, withdrawalNeeded * 0.5);
+      // Smart withdrawal strategy with smoother transitions
+      // 1. Prioritize taxable accounts first
+      const taxableWithdrawalPortion = Math.min(1.0, taxableInvestments / (totalInvestments * 0.5));
+      const taxableWithdrawal = Math.min(taxableInvestments, withdrawalNeeded * taxableWithdrawalPortion);
       const remainingWithdrawal = withdrawalNeeded - taxableWithdrawal;
       
-      // Proportionally split remaining withdrawal between retirement and Roth
+      // 2. Proportionally split remaining withdrawal between retirement and Roth
       let retirementWithdrawal = 0;
       let rothWithdrawal = 0;
       
@@ -152,7 +141,11 @@ export const calculateInvestmentGrowth = (
         rothWithdrawal = remainingWithdrawal * (1 - retirementPortion);
       }
       
-      // Update accounts after withdrawal and growth
+      // 3. Cap withdrawals to prevent negative balances
+      retirementWithdrawal = Math.min(retirementAccounts * 0.9, retirementWithdrawal);
+      rothWithdrawal = Math.min(rothAccounts * 0.9, rothWithdrawal);
+      
+      // 4. Update accounts after withdrawal and growth
       newTaxableInvestments = Math.max(0, (taxableInvestments - taxableWithdrawal) * 
                                     (1 + adjustedReturnRate));
       newRetirementAccounts = Math.max(0, (retirementAccounts - retirementWithdrawal) * 
@@ -161,7 +154,8 @@ export const calculateInvestmentGrowth = (
                                (1 + adjustedReturnRate));
     } else {
       // If investments are depleted, use cash savings
-      newCashSavings = Math.max(0, cashSavings - withdrawalNeeded);
+      const cashWithdrawal = Math.min(cashSavings, withdrawalNeeded);
+      newCashSavings = Math.max(0, cashSavings - cashWithdrawal);
     }
     
     return {

@@ -61,6 +61,9 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
   // Initialize market cycle for investments
   let marketCycle = 0; // 0 = neutral, positive = bull, negative = bear
   
+  // Keep track of retirement withdrawal amount for smoother transitions
+  let retirementWithdrawalAmount = 0;
+  
   for (let year = 0; year < projectionYears; year++) {
     const projectedYear = currentYear + year;
     const currentNetWorth = cashSavings + retirementAccounts + rothAccounts + taxableInvestments + 
@@ -121,6 +124,40 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
     const rawRealEstateReturn = (baseRealEstateAppreciationRate + realEstateVolatility * z) * cycleFactor;
     const realEstateReturn = Math.min(0.15, Math.max(-0.05, rawRealEstateReturn));
     
+    // Special handling for retirement transition (1 year before and after retirement)
+    const isNearRetirement = Math.abs(age - inputs.retirementAge) <= 1;
+    
+    // Calculate retirement income
+    let retirementIncome = 0;
+    if (age >= inputs.retirementAge) {
+      // Add social security if eligible
+      if (age >= inputs.ssStartAge) {
+        retirementIncome += (inputs.socialSecurityBenefit || 0) * 12;
+        // Add spouse social security if applicable
+        if (inputs.spouseName && inputs.spouseAge && inputs.spouseSocialSecurityBenefit) {
+          const spouseCurrentAge = inputs.spouseAge + (age - inputs.currentAge);
+          if (spouseCurrentAge >= inputs.ssStartAge) {
+            retirementIncome += inputs.spouseSocialSecurityBenefit * 12;
+          }
+        }
+      }
+      
+      // Add pension if applicable
+      if (inputs.hasPension && inputs.pensionAmount) {
+        retirementIncome += inputs.pensionAmount;
+      }
+      
+      // Calculate withdrawal needed after accounting for other income
+      const withdrawalNeeded = Math.max(0, inputs.retirementAnnualSpending - retirementIncome);
+      
+      // Gradually adjust retirement withdrawal for smoother transition
+      if (isNearRetirement) {
+        retirementWithdrawalAmount = (retirementWithdrawalAmount * 0.7) + (withdrawalNeeded * 0.3);
+      } else {
+        retirementWithdrawalAmount = withdrawalNeeded;
+      }
+    }
+    
     // Update investment accounts based on whether retired or not
     const investmentUpdates = calculateInvestmentGrowth(
       age, 
@@ -130,7 +167,9 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
       taxableInvestments, 
       cashSavings,
       annualSavings,
-      marketCycle
+      marketCycle,
+      retirementWithdrawalAmount,
+      retirementIncome
     );
     
     retirementAccounts = investmentUpdates.retirementAccounts;
