@@ -1,3 +1,4 @@
+
 import { CalculatorInputs, NetWorthDataPoint } from "./types";
 import { calculateLifeEventsImpact } from "./netWorthLifeEventsCalculator";
 import { 
@@ -9,6 +10,7 @@ import {
   processMortgagePayment 
 } from "./utils/mortgageUtils";
 import { calculateInvestmentGrowth } from "./utils/investmentAccountUtils";
+import { estimateSocialSecurityBenefit } from "./socialSecurityCalculator";
 
 /**
  * Calculates the projected net worth over time based on user inputs
@@ -65,6 +67,11 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
   
   // Keep track of retirement withdrawal amount for smoother transitions
   let retirementWithdrawalAmount = 0;
+  
+  // Estimate Social Security benefits
+  const estimatedSocialSecurity = estimateSocialSecurityBenefit(inputs.annualIncome, inputs.stateOfResidence); // Monthly benefit
+  const estimatedSpouseSocialSecurity = inputs.spouseIncome ? 
+    estimateSocialSecurityBenefit(inputs.spouseIncome, inputs.stateOfResidence) : 0; // Monthly benefit for spouse
   
   for (let year = 0; year < projectionYears; year++) {
     const projectedYear = currentYear + year;
@@ -123,12 +130,12 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
     if (age >= inputs.retirementAge) {
       // Add social security if eligible
       if (age >= inputs.ssStartAge) {
-        retirementIncome += (inputs.socialSecurityBenefit || 0) * 12;
+        retirementIncome += estimatedSocialSecurity * 12; // Convert monthly to annual
         // Add spouse social security if applicable
-        if (inputs.spouseName && inputs.spouseAge && inputs.spouseSocialSecurityBenefit) {
+        if (inputs.spouseName && inputs.spouseAge) {
           const spouseCurrentAge = inputs.spouseAge + (age - inputs.currentAge);
           if (spouseCurrentAge >= inputs.ssStartAge) {
-            retirementIncome += inputs.spouseSocialSecurityBenefit * 12;
+            retirementIncome += estimatedSpouseSocialSecurity * 12; // Convert monthly to annual
           }
         }
       }
@@ -200,3 +207,4 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
   
   return data;
 }
+
