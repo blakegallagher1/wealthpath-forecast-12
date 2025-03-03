@@ -1,3 +1,4 @@
+
 import { CalculatorInputs, IncomeSourcesDataPoint } from "./types";
 import { calculateAIME, calculatePIA, adjustPIAForClaimingAge } from "./socialSecurityCalculator";
 
@@ -18,7 +19,7 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
   const retirementSavingsAtRetirement = calculateProjectedRetirementSavings(inputs);
   
   // Withdrawal rate from retirement plan
-  const withdrawalRate = inputs.retirementWithdrawalRate / 100 || 0.04; // Default to 4%
+  const withdrawalRate = (inputs.retirementWithdrawalRate / 100) || 0.04; // Default to 4%
   
   // Pre-calculate Social Security benefits
   let monthlySSBenefit = 0;
@@ -97,7 +98,7 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
       const yearsIntoRetirement = age - retirementAge;
       
       // Adjusting for inflation erosion in a simplified way
-      const inflationAdjustment = Math.pow(1 - (inputs.inflationRate / 100 || 0.02), yearsIntoRetirement);
+      const inflationAdjustment = Math.pow(1 - ((inputs.inflationRate / 100) || 0.02), yearsIntoRetirement);
       const baseWithdrawalThisYear = retirementSavingsAtRetirement * withdrawalRate * inflationAdjustment;
       
       // Required Minimum Distributions after age 72
@@ -154,7 +155,7 @@ function calculateProjectedRetirementSavings(inputs: CalculatorInputs): number {
     (inputs.annualTaxableContribution || 0);
   
   // Investment return rate
-  const returnRate = inputs.investmentReturnRate / 100 || 0.07;
+  const returnRate = (inputs.investmentReturnRate / 100) || 0.07;
   
   // Calculate future value using compound interest formula
   // FV = P(1+r)^n + PMT * (((1+r)^n - 1) / r)
