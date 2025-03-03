@@ -107,6 +107,45 @@ export function calculateSpousalBenefit(primaryPIA: number, spousePIA: number, c
   return Math.max(ownBenefit, adjustedSpousalBenefit);
 }
 
+/**
+ * Estimates Social Security benefit based on annual income and state of residence
+ * This is a simplified estimation function that returns monthly benefit amount
+ * @param annualIncome Current annual income
+ * @param stateOfResidence State of residence (some states tax Social Security differently)
+ * @returns Estimated monthly Social Security benefit
+ */
+export function estimateSocialSecurityBenefit(annualIncome: number, stateOfResidence?: string): number {
+  // Skip calculation if income is not provided
+  if (!annualIncome) return 0;
+  
+  // Calculate AIME and PIA
+  const aime = calculateAIME(annualIncome);
+  let pia = calculatePIA(aime);
+  
+  // Add state-specific adjustments if needed
+  if (stateOfResidence) {
+    // Some states don't tax Social Security benefits
+    // This is a simplified adjustment factor
+    const taxFriendlyStates = [
+      "Alaska", "Alabama", "Arizona", "Arkansas", "California", "Delaware", 
+      "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", 
+      "Iowa", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", 
+      "Michigan", "Mississippi", "Nevada", "New Hampshire", "New Jersey", 
+      "New York", "North Carolina", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", 
+      "South Carolina", "South Dakota", "Tennessee", "Texas", "Virginia", 
+      "Washington", "Wyoming"
+    ];
+    
+    if (taxFriendlyStates.includes(stateOfResidence)) {
+      // Slight increase in effective benefit for tax-friendly states
+      pia *= 1.03; 
+    }
+  }
+  
+  // Cap at realistic maximum ($4,873 in 2024)
+  return Math.min(pia, 4873);
+}
+
 export function generateSocialSecurityData(inputs: CalculatorInputs): SocialSecurityDataPoint[] {
   // Calculate primary benefit from income
   const aime = calculateAIME(inputs.annualIncome || 0);
@@ -152,3 +191,4 @@ export function generateSocialSecurityData(inputs: CalculatorInputs): SocialSecu
     }
   ];
 }
+
