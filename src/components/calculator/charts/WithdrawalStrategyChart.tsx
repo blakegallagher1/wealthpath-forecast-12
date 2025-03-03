@@ -1,11 +1,9 @@
 
 import { useMemo } from "react";
-import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useTheme } from "@/hooks/use-theme";
 import { WithdrawalStrategyDataPoint } from "@/lib/calculator/types";
 import { formatChartCurrency } from "./utils/chartFormatters";
-import ReferenceLines from "./withdrawal-strategy/ReferenceLines";
-import StrategyLines from "./withdrawal-strategy/StrategyLines";
 
 interface WithdrawalStrategyChartProps {
   data: WithdrawalStrategyDataPoint[];
@@ -23,6 +21,28 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
     text: isDark ? "#ccc" : "#666",
     referenceLines: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"
   }), [isDark]);
+
+  // Find retirement age for reference line
+  const retirementAgePoint = data.find(point => point.isRetirementAge);
+  const retirementAge = retirementAgePoint?.age;
+
+  // Find depletion points (when balance hits zero or very low)
+  const findDepletionAge = (key: 'aggressive' | 'moderate' | 'conservative') => {
+    // Consider "depleted" when balance falls below 1% of maximum value
+    const maxValue = Math.max(...data.map(d => d[key]));
+    const threshold = maxValue * 0.01;
+    
+    for (let i = data.length - 1; i >= 0; i--) {
+      if (data[i][key] > threshold) {
+        return data[i].age;
+      }
+    }
+    return null;
+  };
+
+  const aggressiveDepletionAge = findDepletionAge('aggressive');
+  const moderateDepletionAge = findDepletionAge('moderate');
+  const conservativeDepletionAge = findDepletionAge('conservative');
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -61,17 +81,48 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
         <Legend 
           wrapperStyle={{ fontSize: "12px" }} 
           formatter={(value, entry) => {
-            const label = value === "3% Withdrawal Rate" 
+            const label = value === "conservative" 
               ? "Conservative (3%)" 
-              : value === "4% Withdrawal Rate" 
+              : value === "moderate" 
                 ? "Moderate (4%)" 
                 : "Aggressive (5%)";
             return <span style={{ color: isDark ? "#fff" : "#000" }}>{label}</span>;
           }}
         />
         
-        <ReferenceLines data={data} colors={colors} />
-        <StrategyLines colors={colors} />
+        {/* Reference line for retirement age */}
+        {retirementAge && (
+          <Line
+            type="monotone"
+            dataKey="conservative"
+            stroke={colors.conservative}
+            strokeWidth={2}
+            dot={false}
+            activeDot={{ r: 6 }}
+            name="conservative"
+          />
+        )}
+        
+        {/* Strategy lines */}
+        <Line
+          type="monotone"
+          dataKey="moderate"
+          stroke={colors.moderate}
+          strokeWidth={2}
+          dot={false}
+          activeDot={{ r: 6 }}
+          name="moderate"
+        />
+        
+        <Line
+          type="monotone"
+          dataKey="aggressive"
+          stroke={colors.aggressive}
+          strokeWidth={2}
+          dot={false}
+          activeDot={{ r: 6 }}
+          name="aggressive"
+        />
       </LineChart>
     </ResponsiveContainer>
   );
