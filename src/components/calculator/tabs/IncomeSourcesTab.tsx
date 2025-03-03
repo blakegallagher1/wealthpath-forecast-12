@@ -17,7 +17,7 @@ const IncomeSourcesTab = ({ plan }: IncomeSourcesTabProps) => {
           Breakdown of your projected income sources during retirement
         </CardDescription>
       </CardHeader>
-      <CardContent className="h-[600px]">
+      <CardContent className="h-[500px]">
         <IncomeSourcesChart data={plan.incomeSourcesData} />
       </CardContent>
     </Card>
