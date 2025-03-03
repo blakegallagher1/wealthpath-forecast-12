@@ -103,7 +103,7 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
   const incomeSourcesData = generateIncomeSourcesData(inputs);
   const withdrawalStrategyData = generateWithdrawalStrategyData(inputs);
   const riskProfileData = generateRiskProfileData(inputs);
-  // Use the already generated socialSecurityData instead of generating it again
+  // Use the already generated socialSecurityData (reusing existing variable)
   const debtPayoffData = generateDebtPayoffData(inputs);
   
   return {
