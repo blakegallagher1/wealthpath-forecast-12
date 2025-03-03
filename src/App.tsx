@@ -1,33 +1,21 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/providers/theme-provider";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import AdvisorLogin from "./pages/AdvisorLogin";
-import AdvisorDashboard from "./pages/AdvisorDashboard";
-import ClientDetail from "./pages/ClientDetail";
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+function App() {
+  return (
+    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/advisor/login" element={<AdvisorLogin />} />
-          <Route path="/advisor/dashboard" element={<AdvisorDashboard />} />
-          <Route path="/advisor/client/:clientId" element={<ClientDetail />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Index />} />
         </Routes>
+        <Toaster />
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </ThemeProvider>
+  );
+}
 
 export default App;
