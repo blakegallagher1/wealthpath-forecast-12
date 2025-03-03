@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -789,7 +788,7 @@ const InputForm = ({ inputs, onChange }: InputFormProps) => {
                   id="socialSecurityBenefit"
                   type="number"
                   min={0}
-                  value={inputs.socialSecurityBenefit.toString()}
+                  value={inputs.socialSecurityBenefit?.toString() || "0"}
                   onChange={(e) => handleNumberChange("socialSecurityBenefit", e.target.value)}
                   className="mt-1.5"
                 />
@@ -801,7 +800,7 @@ const InputForm = ({ inputs, onChange }: InputFormProps) => {
                   id="spouseSocialSecurityBenefit"
                   type="number"
                   min={0}
-                  value={inputs.spouseSocialSecurityBenefit.toString()}
+                  value={inputs.spouseSocialSecurityBenefit?.toString() || "0"}
                   onChange={(e) => handleNumberChange("spouseSocialSecurityBenefit", e.target.value)}
                   className="mt-1.5"
                   disabled={!inputs.spouseName}

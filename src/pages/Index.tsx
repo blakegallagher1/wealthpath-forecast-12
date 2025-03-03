@@ -12,7 +12,11 @@ import { toast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [calculatorInputs, setCalculatorInputs] = useState<CalculatorInputs>(calculatorDefaults);
+  const [calculatorInputs, setCalculatorInputs] = useState<CalculatorInputs>({
+    ...calculatorDefaults,
+    socialSecurityBenefit: 0,
+    spouseSocialSecurityBenefit: 0
+  });
 
   const loadTestData = () => {
     const testData: CalculatorInputs = {
@@ -37,6 +41,10 @@ const Index = () => {
       taxableInvestments: 3000,
       realEstateEquity: 0,
       annual401kContribution: 0,
+      
+      // Ensure Social Security fields are explicitly set
+      socialSecurityBenefit: 0,
+      spouseSocialSecurityBenefit: 0,
     };
     
     setCalculatorInputs(testData);

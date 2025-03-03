@@ -10,20 +10,23 @@ interface IncomeSourcesTabProps {
 }
 
 const IncomeSourcesTab = ({ plan }: IncomeSourcesTabProps) => {
+  // Safely check for data existence
+  const incomeSourcesData = plan?.incomeSourcesData || [];
+  
   // Calculate the total expected retirement income
-  const retirementIncomeData = plan?.incomeSourcesData?.find(data => data.isRetirementAge) || null;
+  const retirementIncomeData = incomeSourcesData.find(data => data.isRetirementAge) || null;
   const totalRetirementIncome = retirementIncomeData?.total || 0;
   
   // Find social security starting age data point
-  const ssStartingPoint = plan?.incomeSourcesData?.find(data => (data.socialSecurity || 0) > 0) || null;
+  const ssStartingPoint = incomeSourcesData.find(data => (data.socialSecurity || 0) > 0) || null;
   const ssStartAge = ssStartingPoint?.age || 0;
   
   // Calculate primary vs spouse income
-  const primaryWorkingIncome = plan?.incomeSourcesData?.find(data => (data.primaryIncome || 0) > 0)?.primaryIncome || 0;
-  const spouseWorkingIncome = plan?.incomeSourcesData?.find(data => (data.spouseIncome || 0) > 0)?.spouseIncome || 0;
+  const primaryWorkingIncome = incomeSourcesData.find(data => (data.primaryIncome || 0) > 0)?.primaryIncome || 0;
+  const spouseWorkingIncome = incomeSourcesData.find(data => (data.spouseIncome || 0) > 0)?.spouseIncome || 0;
   
   // Summarize data
-  const hasSpouseIncome = plan?.incomeSourcesData?.some(data => (data.spouseIncome || 0) > 0) || false;
+  const hasSpouseIncome = incomeSourcesData.some(data => (data.spouseIncome || 0) > 0) || false;
   
   return (
     <Card>
@@ -54,8 +57,8 @@ const IncomeSourcesTab = ({ plan }: IncomeSourcesTabProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="h-80">
-        {plan?.incomeSourcesData && plan.incomeSourcesData.length > 0 ? (
-          <IncomeSourcesChart data={plan.incomeSourcesData} />
+        {incomeSourcesData.length > 0 ? (
+          <IncomeSourcesChart data={incomeSourcesData} />
         ) : (
           <div className="flex items-center justify-center h-full">
             <p className="text-muted-foreground">No income source data available</p>

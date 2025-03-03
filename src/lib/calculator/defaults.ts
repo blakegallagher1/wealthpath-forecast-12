@@ -60,6 +60,8 @@ export const calculatorDefaults: CalculatorInputs = {
   inflationRate: 2.5,
   retirementWithdrawalRate: 4.0,
   lifeExpectancy: 90,
-  // Social Security is now calculated automatically based on income
-  // But we still allow manual override if specified
+  
+  // Ensure Social Security fields are properly initialized
+  socialSecurityBenefit: 0,
+  spouseSocialSecurityBenefit: 0,
 };

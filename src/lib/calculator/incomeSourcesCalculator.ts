@@ -3,6 +3,8 @@ import { CalculatorInputs, IncomeSourcesDataPoint } from "./types";
 import { calculateAIME, calculatePIA, adjustPIAForClaimingAge } from "./socialSecurityCalculator";
 
 export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourcesDataPoint[] {
+  if (!inputs) return [];
+  
   const data: IncomeSourcesDataPoint[] = [];
   const currentAge = inputs?.currentAge || 35;
   const retirementAge = inputs?.retirementAge || 65;
@@ -12,8 +14,8 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
   const ssStartAge = inputs?.ssStartAge || 67;
   
   // Income growth rate with more conservative cap
-  const incomeGrowthRate = Math.min((inputs?.incomeGrowthRate || 3) / 100, 0.04); // Cap at 4%
-  const spouseIncomeGrowthRate = Math.min((inputs?.spouseIncomeGrowthRate || 3) / 100, 0.04); // Cap at 4%
+  const incomeGrowthRate = Math.min(((inputs?.incomeGrowthRate || 0) / 100) || 0.03, 0.04); // Cap at 4%
+  const spouseIncomeGrowthRate = Math.min(((inputs?.spouseIncomeGrowthRate || 0) / 100) || 0.03, 0.04); // Cap at 4%
   
   // Calculate retirement savings at retirement age (simplified)
   const retirementSavingsAtRetirement = calculateProjectedRetirementSavings(inputs);
@@ -141,6 +143,8 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
 
 // Helper function to calculate projected retirement savings
 function calculateProjectedRetirementSavings(inputs: CalculatorInputs): number {
+  if (!inputs) return 0;
+  
   const yearsUntilRetirement = (inputs?.retirementAge || 65) - (inputs?.currentAge || 35);
   
   // Current retirement assets
