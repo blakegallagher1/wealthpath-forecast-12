@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,10 +16,30 @@ const PhoneVerification = ({ onVerify }: PhoneVerificationProps) => {
   const [verificationCode, setVerificationCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [verificationAttempts, setVerificationAttempts] = useState(0);
 
   // Simplified phone number validation
   const isValidPhoneNumber = (phone: string) => {
     return /^\d{10}$/.test(phone.replace(/[^0-9]/g, ""));
+  };
+
+  // Countdown timer for resending code
+  useEffect(() => {
+    if (timeRemaining <= 0) return;
+    
+    const timer = setTimeout(() => {
+      setTimeRemaining(prev => prev - 1);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [timeRemaining]);
+
+  // Format time as MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Simulate sending verification code
@@ -41,16 +61,31 @@ const PhoneVerification = ({ onVerify }: PhoneVerificationProps) => {
     setTimeout(() => {
       setIsSubmitting(false);
       setCodeSent(true);
+      setTimeRemaining(60); // 60 second cooldown for resending
+      
+      // Generate a random 6-digit code (in a real app this would be sent to the phone)
+      const generatedCode = "123456"; // For demo purposes, use fixed code
+      
+      // In a real app, you would call an API to send an SMS:
+      // const response = await fetch('/api/send-verification', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ phoneNumber: cleanPhone })
+      // });
+      
       toast({
         title: "Verification code sent",
         description: `A verification code has been sent to ${phoneNumber}. For demo purposes, use code "123456".`,
       });
+      
+      console.log(`[DEMO] Verification code for ${phoneNumber}: ${generatedCode}`);
     }, 1500);
   };
 
   // Simulate verifying code
   const handleVerifyCode = () => {
     setIsSubmitting(true);
+    setVerificationAttempts(prev => prev + 1);
     
     // For demo purposes, accept code "123456"
     setTimeout(() => {
@@ -63,11 +98,24 @@ const PhoneVerification = ({ onVerify }: PhoneVerificationProps) => {
         });
         onVerify();
       } else {
-        toast({
-          title: "Invalid code",
-          description: "The verification code you entered is incorrect. Please try again.",
-          variant: "destructive",
-        });
+        const remainingAttempts = 3 - verificationAttempts;
+        
+        if (remainingAttempts <= 0) {
+          toast({
+            title: "Too many attempts",
+            description: "You've exceeded the maximum number of verification attempts. Please try again later.",
+            variant: "destructive",
+          });
+          setCodeSent(false);
+          setVerificationAttempts(0);
+          setVerificationCode("");
+        } else {
+          toast({
+            title: "Invalid code",
+            description: `The verification code you entered is incorrect. ${remainingAttempts} attempts remaining.`,
+            variant: "destructive",
+          });
+        }
       }
     }, 1500);
   };
@@ -125,9 +173,16 @@ const PhoneVerification = ({ onVerify }: PhoneVerificationProps) => {
                 className="text-base tracking-wider"
                 maxLength={6}
               />
-              <p className="text-sm text-neutral-500">
-                For demo purposes, please enter <span className="font-semibold">123456</span>
-              </p>
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-neutral-500">
+                  For demo purposes, please enter <span className="font-semibold">123456</span>
+                </p>
+                {timeRemaining > 0 && (
+                  <p className="text-sm text-neutral-500">
+                    Resend in {formatTime(timeRemaining)}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </CardContent>
@@ -149,16 +204,28 @@ const PhoneVerification = ({ onVerify }: PhoneVerificationProps) => {
               >
                 {isSubmitting ? "Verifying..." : "Verify Code"}
               </Button>
-              <Button
-                variant="link"
-                onClick={() => {
-                  setCodeSent(false);
-                  setVerificationCode("");
-                }}
-                className="text-sm"
-              >
-                Change phone number
-              </Button>
+              <div className="flex justify-between">
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setCodeSent(false);
+                    setVerificationCode("");
+                  }}
+                  className="text-sm"
+                >
+                  Change phone number
+                </Button>
+                {timeRemaining <= 0 && (
+                  <Button
+                    variant="link"
+                    onClick={handleSendCode}
+                    disabled={isSubmitting}
+                    className="text-sm"
+                  >
+                    Resend code
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </CardFooter>
