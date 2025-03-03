@@ -1,8 +1,15 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
   text-align: center;
+}
+
+@media (min-width: 640px) {
+  #root {
+    padding: 2rem;
+  }
 }
 
 .logo {
@@ -39,4 +46,20 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 640px) {
+  .recharts-wrapper,
+  .recharts-surface {
+    width: 100% !important;
+  }
+  
+  .recharts-legend-wrapper {
+    font-size: 10px !important;
+  }
+  
+  .recharts-tooltip-wrapper {
+    max-width: 80vw !important;
+  }
 }

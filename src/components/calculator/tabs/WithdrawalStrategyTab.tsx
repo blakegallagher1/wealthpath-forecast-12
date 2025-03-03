@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import WithdrawalStrategyChart from "../charts/WithdrawalStrategyChart";
@@ -36,47 +37,47 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
   const conservativeLongevity = calculateLongevity(conservativeDepletionAge, retirementAge);
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <Card className="shadow-sm">
+        <CardHeader className="px-3 sm:px-6 pb-2 sm:pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <CardTitle>Withdrawal Strategy Analysis</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-2xl">Withdrawal Strategy Analysis</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
                 Comparison of different withdrawal rates and their impact on portfolio longevity
               </CardDescription>
             </div>
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Info className="h-3.5 w-3.5" />
+            <Badge variant="outline" className="flex items-center gap-1 w-fit text-xs">
+              <Info className="h-3 w-3" />
               <span>Adjusted for Inflation</span>
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="h-[400px]">
+        <CardContent className="h-[300px] sm:h-[400px] px-2 sm:px-6 pt-0">
           <WithdrawalStrategyChart data={plan.withdrawalStrategyData} />
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-green-500"></span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+        <Card className="shadow-sm">
+          <CardHeader className="px-3 sm:px-4 py-2 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-green-500"></span>
               Conservative Strategy (3%)
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-4 pt-0">
             <div className="space-y-1">
-              <p className="text-2xl font-bold">
+              <p className="text-lg sm:text-2xl font-bold">
                 {formatSummaryValue(initialWithdrawals.conservative, 0)}
-                <span className="text-sm font-normal text-muted-foreground ml-1">/ year</span>
+                <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">/ year</span>
               </p>
-              <p className="text-sm text-muted-foreground">
-                Lower withdrawal rate for longer-lasting portfolio with less spending power.
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Lower withdrawal rate for longer-lasting portfolio.
               </p>
-              <div className="mt-2 pt-2 border-t border-border">
-                <p className="text-sm font-medium flex items-center">
-                  Estimated portfolio longevity: 
+              <div className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-border">
+                <p className="text-xs sm:text-sm font-medium flex items-center flex-wrap">
+                  Est. portfolio longevity: 
                   <span className="ml-1 font-bold text-green-600">
                     {conservativeDepletionAge ? `${conservativeLongevity} years` : "30+ years"}
                   </span>
@@ -86,25 +87,25 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-amber-500"></span>
+        <Card className="shadow-sm">
+          <CardHeader className="px-3 sm:px-4 py-2 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
               Moderate Strategy (4%)
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-4 pt-0">
             <div className="space-y-1">
-              <p className="text-2xl font-bold">
+              <p className="text-lg sm:text-2xl font-bold">
                 {formatSummaryValue(initialWithdrawals.moderate, 0)}
-                <span className="text-sm font-normal text-muted-foreground ml-1">/ year</span>
+                <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">/ year</span>
               </p>
-              <p className="text-sm text-muted-foreground">
-                Traditional "4% rule" balancing longevity and spending needs.
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Traditional "4% rule" balancing longevity and spending.
               </p>
-              <div className="mt-2 pt-2 border-t border-border">
-                <p className="text-sm font-medium flex items-center">
-                  Estimated portfolio longevity: 
+              <div className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-border">
+                <p className="text-xs sm:text-sm font-medium flex items-center flex-wrap">
+                  Est. portfolio longevity: 
                   <span className="ml-1 font-bold text-amber-600">
                     {moderateDepletionAge ? `${moderateLongevity} years` : "30+ years"}
                   </span>
@@ -114,28 +115,28 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-red-500"></span>
+        <Card className="shadow-sm">
+          <CardHeader className="px-3 sm:px-4 py-2 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500"></span>
               Aggressive Strategy (5%)
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-4 pt-0">
             <div className="space-y-1">
-              <p className="text-2xl font-bold">
+              <p className="text-lg sm:text-2xl font-bold">
                 {formatSummaryValue(initialWithdrawals.aggressive, 0)}
-                <span className="text-sm font-normal text-muted-foreground ml-1">/ year</span>
+                <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">/ year</span>
               </p>
-              <p className="text-sm text-muted-foreground">
-                Higher withdrawal rate for more spending power but shorter portfolio lifespan.
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Higher withdrawal rate but shorter portfolio lifespan.
               </p>
-              <div className="mt-2 pt-2 border-t border-border">
-                <p className="text-sm font-medium flex items-center">
+              <div className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-border">
+                <p className="text-xs sm:text-sm font-medium flex items-center flex-wrap">
                   {aggressiveDepletionAge && aggressiveLongevity < 20 && (
-                    <AlertTriangle size={14} className="mr-1 text-red-500" />
+                    <AlertTriangle size={12} className="mr-1 text-red-500" />
                   )}
-                  Estimated portfolio longevity: 
+                  Est. portfolio longevity: 
                   <span className="ml-1 font-bold text-red-600">
                     {aggressiveDepletionAge ? `${aggressiveLongevity} years` : "30+ years"}
                   </span>
@@ -146,17 +147,17 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
         </Card>
       </div>
 
-      <Card className="bg-muted/50">
-        <CardContent className="pt-6">
-          <div className="text-sm space-y-2">
+      <Card className="bg-muted/50 shadow-sm">
+        <CardContent className="pt-3 sm:pt-6 px-3 sm:px-6">
+          <div className="text-xs sm:text-sm space-y-1.5 sm:space-y-2">
             <h4 className="font-medium">About Withdrawal Strategies</h4>
-            <p>These projections show how different withdrawal rates affect your retirement portfolio over time:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li><strong>Conservative (3%)</strong>: Prioritizes portfolio longevity over spending power.</li>
-              <li><strong>Moderate (4%)</strong>: The traditional "4% rule" offering balance between spending and longevity.</li>
-              <li><strong>Aggressive (5%)</strong>: Provides more spending power at the cost of potentially shorter portfolio lifespan.</li>
+            <p>These projections show how different withdrawal rates affect your retirement portfolio:</p>
+            <ul className="list-disc pl-4 sm:pl-5 space-y-1">
+              <li><strong>Conservative (3%)</strong>: Prioritizes portfolio longevity.</li>
+              <li><strong>Moderate (4%)</strong>: The traditional "4% rule" balancing spending and longevity.</li>
+              <li><strong>Aggressive (5%)</strong>: More spending power at cost of shorter portfolio life.</li>
             </ul>
-            <p className="mt-2">All projections account for inflation, meaning your purchasing power should remain consistent over time despite rising prices.</p>
+            <p className="mt-1.5 sm:mt-2">All projections account for inflation, maintaining your purchasing power over time.</p>
           </div>
         </CardContent>
       </Card>

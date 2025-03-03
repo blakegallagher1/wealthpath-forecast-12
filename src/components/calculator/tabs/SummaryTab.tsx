@@ -12,15 +12,15 @@ interface SummaryTabProps {
 
 const SummaryTab = ({ plan, inputs, formatCurrency }: SummaryTabProps) => {
   return (
-    <Card className="w-full">
-      <CardHeader className="px-4 sm:px-6">
-        <CardTitle className="text-xl sm:text-2xl">Retirement Plan Summary</CardTitle>
-        <CardDescription className="text-sm">
+    <Card className="w-full shadow-sm">
+      <CardHeader className="px-3 sm:px-6 pb-2 sm:pb-4">
+        <CardTitle className="text-lg sm:text-2xl">Retirement Plan Summary</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">
           Overview of your retirement plan and key metrics
         </CardDescription>
       </CardHeader>
-      <CardContent className="px-4 sm:px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+      <CardContent className="px-3 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
           <ResultInfoCard 
             title="Retirement Age" 
             value={inputs.retirementAge.toString()} 
@@ -56,11 +56,11 @@ const SummaryTab = ({ plan, inputs, formatCurrency }: SummaryTabProps) => {
           />
         </div>
         
-        <div className="mt-6 sm:mt-8 space-y-4">
-          <h3 className="text-lg font-medium">Recommendations</h3>
-          <ul className="space-y-2 list-disc pl-5">
+        <div className="mt-4 sm:mt-8 space-y-3 sm:space-y-4">
+          <h3 className="text-base sm:text-lg font-medium">Recommendations</h3>
+          <ul className="space-y-1.5 sm:space-y-2 list-disc pl-4 sm:pl-5">
             {plan.recommendations.map((rec, index) => (
-              <li key={index} className="text-neutral-700 text-sm sm:text-base">{rec}</li>
+              <li key={index} className="text-neutral-700 text-xs sm:text-base">{rec}</li>
             ))}
           </ul>
         </div>
