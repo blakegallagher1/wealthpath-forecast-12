@@ -34,6 +34,7 @@ export const calculatorDefaults: CalculatorInputs = {
   annualTaxableContribution: 5000,
   investmentReturnRate: 7.0,
   riskProfile: "moderate",
+  realEstateAppreciationRate: 3.0, // Added default real estate appreciation rate
   
   // Liabilities
   mortgageBalance: 300000,
