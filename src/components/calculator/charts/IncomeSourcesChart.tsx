@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from "recharts";
 import { useTheme } from "@/hooks/use-theme";
 import { IncomeSourcesDataPoint } from "@/lib/calculator/types";
+import { useMobile } from "@/hooks/use-mobile";
 
 interface IncomeSourcesChartProps {
   data: IncomeSourcesDataPoint[];
@@ -11,6 +12,7 @@ interface IncomeSourcesChartProps {
 const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const isMobile = useMobile();
 
   // Filter out any data points with invalid values to prevent chart errors
   const validData = useMemo(() => {
@@ -46,7 +48,7 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
       style: "currency",
       currency: "USD",
       notation: "compact",
-      maximumFractionDigits: 1,
+      maximumFractionDigits: isMobile ? 0 : 1,
     }).format(value);
   };
 
@@ -56,9 +58,9 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
         data={validData}
         margin={{
           top: 20,
-          right: 30,
-          left: 10,
-          bottom: 20,
+          right: isMobile ? 10 : 30,
+          left: isMobile ? 0 : 10,
+          bottom: isMobile ? 10 : 20,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
@@ -66,17 +68,18 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
           dataKey="age" 
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
-          tick={{ fill: colors.text, fontSize: 12 }}
-          height={30}
+          tick={{ fill: colors.text, fontSize: isMobile ? 10 : 12 }}
+          height={isMobile ? 25 : 30}
           padding={{ left: 10, right: 10 }}
           allowDataOverflow={false}
+          interval={isMobile ? "preserveEnd" : 0}
         />
         <YAxis 
           tickFormatter={formatCurrency}
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
-          tick={{ fill: colors.text, fontSize: 12 }}
-          width={60}
+          tick={{ fill: colors.text, fontSize: isMobile ? 10 : 12 }}
+          width={isMobile ? 45 : 60}
         />
         <Tooltip
           formatter={(value: number) => [formatCurrency(value), ""]}
@@ -86,12 +89,18 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
             borderColor: colors.grid,
             borderRadius: "0.375rem",
             color: colors.text,
+            fontSize: isMobile ? "10px" : "12px"
           }}
         />
         <Legend 
-          wrapperStyle={{ fontSize: "12px", paddingTop: 10 }} 
+          wrapperStyle={{ 
+            fontSize: isMobile ? "8px" : "12px", 
+            paddingTop: 10 
+          }} 
           verticalAlign="bottom"
-          height={36}
+          height={isMobile ? 70 : 36}
+          layout={isMobile ? "vertical" : "horizontal"}
+          iconSize={isMobile ? 8 : 10}
         />
         <Area
           type="monotone"
@@ -168,7 +177,7 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
               value: "Retirement Age",
               position: "top",
               fill: colors.text,
-              fontSize: 12
+              fontSize: isMobile ? 9 : 12
             }}
           />
         )}

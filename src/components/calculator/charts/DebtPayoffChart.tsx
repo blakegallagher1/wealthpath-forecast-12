@@ -12,6 +12,7 @@ import {
   ReferenceLine
 } from "recharts";
 import { formatCurrency } from "@/lib/calculator/formatters";
+import { useMobile } from "@/hooks/use-mobile";
 
 interface DebtPayoffDataPoint {
   age: number;
@@ -29,6 +30,8 @@ interface DebtPayoffChartProps {
 }
 
 const DebtPayoffChart = ({ data }: DebtPayoffChartProps) => {
+  const isMobile = useMobile();
+  
   // Find retirement age for reference line
   const retirementPoint = data.find((point) => point.isRetirementAge);
   
@@ -36,24 +39,30 @@ const DebtPayoffChart = ({ data }: DebtPayoffChartProps) => {
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart
         data={data}
-        margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
+        margin={{ 
+          top: 20, 
+          right: isMobile ? 10 : 30, 
+          left: isMobile ? 10 : 20, 
+          bottom: 30 
+        }}
       >
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
         <XAxis
           dataKey="age"
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: isMobile ? 10 : 12 }}
           tickLine={false}
           axisLine={{ stroke: "#e5e5e5" }}
-          height={30}
+          height={isMobile ? 25 : 30}
           padding={{ left: 10, right: 10 }}
           allowDataOverflow={false}
+          interval={isMobile ? "preserveEnd" : 0}
         />
         <YAxis
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: isMobile ? 10 : 12 }}
           tickLine={false}
           axisLine={{ stroke: "#e5e5e5" }}
           tickFormatter={(value) => formatCurrency(value)}
-          width={70}
+          width={isMobile ? 50 : 70}
         />
         <Tooltip
           formatter={(value: number, name: string) => [
@@ -65,11 +74,17 @@ const DebtPayoffChart = ({ data }: DebtPayoffChartProps) => {
             name === "creditCardBalance" ? "Credit Cards" : name
           ]}
           labelFormatter={(age) => `Age: ${age}`}
+          contentStyle={{ fontSize: isMobile ? "10px" : "12px" }}
         />
         <Legend 
-          wrapperStyle={{ paddingTop: 10, fontSize: "12px" }}
+          wrapperStyle={{ 
+            paddingTop: 10, 
+            fontSize: isMobile ? "8px" : "12px" 
+          }}
           verticalAlign="bottom"
-          height={36}
+          height={isMobile ? 70 : 36}
+          layout={isMobile ? "vertical" : "horizontal"}
+          iconSize={isMobile ? 8 : 10}
           formatter={(value) => 
             value === "totalDebt" ? "Total Debt" :
             value === "mortgageBalance" ? "Mortgage" :
@@ -130,7 +145,7 @@ const DebtPayoffChart = ({ data }: DebtPayoffChartProps) => {
               value: "Retirement",
               position: "top",
               fill: "#f59e0b",
-              fontSize: 12,
+              fontSize: isMobile ? 9 : 12,
             }}
           />
         )}

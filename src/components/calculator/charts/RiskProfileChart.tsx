@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from "recharts";
 import { useTheme } from "@/hooks/use-theme";
 import { RiskProfileDataPoint } from "@/lib/calculator/types";
+import { useMobile } from "@/hooks/use-mobile";
 
 interface RiskProfileChartProps {
   data: RiskProfileDataPoint[];
@@ -11,6 +12,7 @@ interface RiskProfileChartProps {
 const RiskProfileChart = ({ data }: RiskProfileChartProps) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const isMobile = useMobile();
 
   const colors = useMemo(() => ({
     conservative: "#3b82f6",
@@ -25,7 +27,7 @@ const RiskProfileChart = ({ data }: RiskProfileChartProps) => {
       style: "currency",
       currency: "USD",
       notation: "compact",
-      maximumFractionDigits: 1,
+      maximumFractionDigits: isMobile ? 0 : 1,
     }).format(value);
   };
 
@@ -38,8 +40,8 @@ const RiskProfileChart = ({ data }: RiskProfileChartProps) => {
         data={data}
         margin={{
           top: 20,
-          right: 30,
-          left: 20,
+          right: isMobile ? 10 : 30,
+          left: isMobile ? 10 : 20,
           bottom: 30,
         }}
       >
@@ -48,17 +50,18 @@ const RiskProfileChart = ({ data }: RiskProfileChartProps) => {
           dataKey="age" 
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
-          tick={{ fill: colors.text, fontSize: 12 }}
-          height={30}
+          tick={{ fill: colors.text, fontSize: isMobile ? 10 : 12 }}
+          height={isMobile ? 25 : 30}
           padding={{ left: 10, right: 10 }}
           allowDataOverflow={false}
+          interval={isMobile ? "preserveEnd" : 0}
         />
         <YAxis 
           tickFormatter={formatCurrency}
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
-          tick={{ fill: colors.text, fontSize: 12 }}
-          width={70}
+          tick={{ fill: colors.text, fontSize: isMobile ? 10 : 12 }}
+          width={isMobile ? 50 : 70}
         />
         <Tooltip
           formatter={(value: number) => [formatCurrency(value), ""]}
@@ -68,12 +71,17 @@ const RiskProfileChart = ({ data }: RiskProfileChartProps) => {
             borderColor: colors.grid,
             borderRadius: "0.375rem",
             color: colors.text,
+            fontSize: isMobile ? "10px" : "12px"
           }}
         />
         <Legend 
-          wrapperStyle={{ fontSize: "12px", paddingTop: 10 }} 
+          wrapperStyle={{ 
+            fontSize: isMobile ? "9px" : "12px", 
+            paddingTop: 10 
+          }} 
           verticalAlign="bottom"
-          height={36}
+          height={isMobile ? 50 : 36}
+          layout={isMobile ? "vertical" : "horizontal"}
         />
         <Line
           type="monotone"
@@ -81,7 +89,7 @@ const RiskProfileChart = ({ data }: RiskProfileChartProps) => {
           stroke={colors.conservative}
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 6 }}
+          activeDot={{ r: isMobile ? 4 : 6 }}
           name="Conservative (Low Risk)"
         />
         <Line
@@ -90,7 +98,7 @@ const RiskProfileChart = ({ data }: RiskProfileChartProps) => {
           stroke={colors.moderate}
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 6 }}
+          activeDot={{ r: isMobile ? 4 : 6 }}
           name="Moderate (Medium Risk)"
         />
         <Line
@@ -99,7 +107,7 @@ const RiskProfileChart = ({ data }: RiskProfileChartProps) => {
           stroke={colors.aggressive}
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 6 }}
+          activeDot={{ r: isMobile ? 4 : 6 }}
           name="Aggressive (High Risk)"
         />
         
@@ -112,9 +120,9 @@ const RiskProfileChart = ({ data }: RiskProfileChartProps) => {
             label={{ 
               value: 'Retirement', 
               position: 'insideTopRight', 
-              fontSize: 11, 
+              fontSize: isMobile ? 9 : 11, 
               fill: '#0891b2',
-              offset: 10
+              offset: isMobile ? 5 : 10
             }}
           />
         )}

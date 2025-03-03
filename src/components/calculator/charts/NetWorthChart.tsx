@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from "recharts";
 import { useTheme } from "@/hooks/use-theme";
 import { NetWorthDataPoint } from "@/lib/calculator/types";
+import { useMobile } from "@/hooks/use-mobile";
 
 interface NetWorthChartProps {
   data: NetWorthDataPoint[];
@@ -11,6 +12,7 @@ interface NetWorthChartProps {
 const NetWorthChart = ({ data }: NetWorthChartProps) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const isMobile = useMobile();
 
   const colors = useMemo(() => ({
     cash: "#3b82f6",
@@ -51,7 +53,7 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
       style: "currency",
       currency: "USD",
       notation: "compact",
-      maximumFractionDigits: 1,
+      maximumFractionDigits: isMobile ? 0 : 1,
     }).format(value);
   };
 
@@ -68,8 +70,8 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
         data={normalizedData}
         margin={{
           top: 20,
-          right: 30,
-          left: 20,
+          right: isMobile ? 10 : 30,
+          left: isMobile ? 10 : 20,
           bottom: 30,
         }}
       >
@@ -78,18 +80,19 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
           dataKey="age" 
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
-          tick={{ fill: colors.text, fontSize: 12 }}
-          height={30}
+          tick={{ fill: colors.text, fontSize: isMobile ? 10 : 12 }}
+          height={isMobile ? 25 : 30}
           padding={{ left: 10, right: 10 }}
           allowDataOverflow={false}
+          interval={isMobile ? "preserveEnd" : 0}
         />
         <YAxis 
           tickFormatter={formatCurrency}
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
-          tick={{ fill: colors.text, fontSize: 12 }}
+          tick={{ fill: colors.text, fontSize: isMobile ? 10 : 12 }}
           domain={[0, 'auto']}
-          width={70}
+          width={isMobile ? 50 : 70}
         />
         <Tooltip
           formatter={(value: number) => [formatCurrency(value), ""]}
@@ -99,12 +102,19 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
             borderColor: colors.grid,
             borderRadius: "0.375rem",
             color: colors.text,
+            fontSize: isMobile ? "10px" : "12px",
           }}
         />
         <Legend 
-          wrapperStyle={{ fontSize: "12px", paddingTop: 10 }} 
+          wrapperStyle={{ 
+            fontSize: isMobile ? "10px" : "12px", 
+            paddingTop: 10,
+            paddingLeft: isMobile ? 10 : 0,
+            paddingRight: isMobile ? 10 : 0
+          }} 
           verticalAlign="bottom"
-          height={36}
+          height={isMobile ? 50 : 36}
+          layout={isMobile ? "vertical" : "horizontal"}
         />
         <Area
           type="monotone"
@@ -148,7 +158,7 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
             label={{
               value: 'Retirement',
               position: 'insideTopRight',
-              fontSize: 11,
+              fontSize: isMobile ? 9 : 11,
               fill: '#0891b2'
             }}
           />

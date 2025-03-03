@@ -3,6 +3,7 @@ import React from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { WithdrawalStrategyDataPoint } from "@/lib/calculator/types";
 import { formatCurrencyForTooltip } from "./utils/chartFormatters";
+import { useMobile } from "@/hooks/use-mobile";
 
 interface WithdrawalStrategyChartProps {
   data: WithdrawalStrategyDataPoint[];
@@ -11,11 +12,12 @@ interface WithdrawalStrategyChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const dataPoint = payload[0].payload;
+    const isMobile = useMobile();
     
     return (
-      <div className="bg-white p-3 border border-neutral-200 shadow-sm rounded-md">
-        <p className="font-medium text-sm mb-1">Age {dataPoint.age}</p>
-        <div className="space-y-1 text-xs">
+      <div className={`bg-white p-${isMobile ? '2' : '3'} border border-neutral-200 shadow-sm rounded-md`}>
+        <p className={`font-medium text-${isMobile ? 'xs' : 'sm'} mb-1`}>Age {dataPoint.age}</p>
+        <div className={`space-y-${isMobile ? '0.5' : '1'} text-${isMobile ? '2xs' : 'xs'}`}>
           <div className="flex items-center">
             <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
             <span className="text-neutral-600">Conservative: </span>
@@ -40,6 +42,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
+  const isMobile = useMobile();
+  
   // Find retirement age for the reference line
   const retirementDataPoint = data.find(d => d.isRetirementAge);
   const retirementAge = retirementDataPoint?.age || 65;
@@ -48,27 +52,33 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
         data={data}
-        margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
+        margin={{ 
+          top: 20, 
+          right: isMobile ? 10 : 30, 
+          left: isMobile ? 10 : 20, 
+          bottom: 30 
+        }}
       >
         <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
         <XAxis 
           dataKey="age" 
-          tick={{ fontSize: 12 }} 
-          tickMargin={5}
-          height={30}
+          tick={{ fontSize: isMobile ? 10 : 12 }} 
+          tickMargin={isMobile ? 3 : 5}
+          height={isMobile ? 25 : 30}
           padding={{ left: 10, right: 10 }}
           allowDataOverflow={false}
+          interval={isMobile ? "preserveEnd" : 0}
           label={{ 
             value: 'Age', 
             position: 'insideBottom', 
             offset: -5,
-            fontSize: 12
+            fontSize: isMobile ? 10 : 12
           }}
         />
         <YAxis 
           tickFormatter={(value) => `$${value >= 1000000 ? `${(value / 1000000).toFixed(0)}M` : value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value}`}
-          width={70}
-          tick={{ fontSize: 12 }}
+          width={isMobile ? 50 : 70}
+          tick={{ fontSize: isMobile ? 10 : 12 }}
         />
         <Tooltip content={<CustomTooltip />} />
         <ReferenceLine 
@@ -79,7 +89,7 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
             value: 'Retirement', 
             position: 'top', 
             fill: '#9333ea',
-            fontSize: 12
+            fontSize: isMobile ? 9 : 12
           }} 
         />
         <Line 
@@ -88,7 +98,7 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
           stroke="#10b981" 
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 6 }}
+          activeDot={{ r: isMobile ? 4 : 6 }}
         />
         <Line 
           type="monotone" 
@@ -96,7 +106,7 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
           stroke="#f59e0b" 
           strokeWidth={2} 
           dot={false}
-          activeDot={{ r: 6 }}
+          activeDot={{ r: isMobile ? 4 : 6 }}
         />
         <Line 
           type="monotone" 
@@ -104,7 +114,7 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
           stroke="#ef4444" 
           strokeWidth={2} 
           dot={false}
-          activeDot={{ r: 6 }}
+          activeDot={{ r: isMobile ? 4 : 6 }}
         />
       </LineChart>
     </ResponsiveContainer>
