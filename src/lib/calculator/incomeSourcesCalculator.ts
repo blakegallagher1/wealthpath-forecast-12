@@ -1,4 +1,3 @@
-
 import { CalculatorInputs, IncomeSourcesDataPoint } from "./types";
 import { calculateAIME, calculatePIA, adjustPIAForClaimingAge } from "./socialSecurityCalculator";
 
@@ -60,14 +59,12 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
     // Calculate corresponding spouse age for this year
     const spouseCurrentAge = spouseAge ? age - currentAge + spouseAge : 0;
     
-    // Calculate primary income (before retirement)
     if (age < retirementAge) {
       const yearsWorking = age - currentAge;
       primaryIncome = (inputs.annualIncome || 0) * Math.pow(1 + incomeGrowthRate, yearsWorking);
       primaryIncome = Math.min(primaryIncome, 400000); // Cap at $400K
     }
     
-    // Calculate spouse income (before spouse's retirement)
     if (inputs.spouseIncome && inputs.spouseIncome > 0 && spouseAge) {
       if (spouseCurrentAge < spouseRetirementAge) {
         const spouseYearsWorking = spouseCurrentAge - spouseAge + (currentAge - spouseAge);
@@ -76,7 +73,6 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
       }
     }
     
-    // Post-retirement income sources
     if (age >= retirementAge) {
       // Social Security (starts at SS age)
       if (age >= ssStartAge) {
