@@ -70,25 +70,25 @@ const DebtPayoffTab = ({ plan }: DebtPayoffTabProps) => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Debt Payoff Timeline</CardTitle>
-          <CardDescription>
+      <Card className="w-full">
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-xl sm:text-2xl">Debt Payoff Timeline</CardTitle>
+          <CardDescription className="text-sm">
             Track your journey to becoming debt-free over time
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-[400px]">
+        <CardContent className="h-[400px] px-2 sm:px-6">
           <DebtPayoffChart data={plan.debtPayoffData} />
         </CardContent>
       </Card>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 px-4">
             <CardTitle className="text-lg">Total Debt</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="px-4">
+            <div className="text-xl sm:text-2xl font-bold">
               {formatCurrency(initialDebt)}
             </div>
             {debtFreeAge && (
@@ -100,11 +100,11 @@ const DebtPayoffTab = ({ plan }: DebtPayoffTabProps) => {
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 px-4">
             <CardTitle className="text-lg">Mortgage</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="px-4">
+            <div className="text-xl sm:text-2xl font-bold">
               {homePurchasePlanned && initialMortgageBalance === 0
                 ? formatCurrency(newMortgageAmount) 
                 : formatCurrency(initialMortgageBalance)}
@@ -132,11 +132,11 @@ const DebtPayoffTab = ({ plan }: DebtPayoffTabProps) => {
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 px-4">
             <CardTitle className="text-lg">Other Debt</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="px-4">
+            <div className="text-xl sm:text-2xl font-bold">
               {formatCurrency(
                 (plan.debtPayoffData[0]?.studentLoanBalance || 0) +
                 (plan.debtPayoffData[0]?.autoLoanBalance || 0) +

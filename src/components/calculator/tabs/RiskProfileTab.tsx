@@ -11,31 +11,31 @@ interface RiskProfileTabProps {
 
 const RiskProfileTab = ({ plan }: RiskProfileTabProps) => {
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Risk Profile Comparison</CardTitle>
-          <CardDescription>
+    <div className="space-y-6">
+      <Card className="w-full">
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-xl sm:text-2xl">Risk Profile Comparison</CardTitle>
+          <CardDescription className="text-sm">
             Projected portfolio growth under different risk profiles
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-[400px]">
+        <CardContent className="h-[400px] px-2 sm:px-6">
           <RiskProfileChart data={plan.riskProfileData} />
         </CardContent>
       </Card>
       
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Social Security Benefits</CardTitle>
-          <CardDescription>
+      <Card className="w-full">
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-xl sm:text-2xl">Social Security Benefits</CardTitle>
+          <CardDescription className="text-sm">
             Projected social security benefits at different claiming ages
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-[400px]">
+        <CardContent className="h-[400px] px-2 sm:px-6">
           <SocialSecurityChart data={plan.socialSecurityData} />
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 };
 

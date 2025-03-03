@@ -35,16 +35,16 @@ const IncomeSourcesTab = ({ plan }: IncomeSourcesTabProps) => {
   const hasSpouseSS = incomeSourcesData.some(data => (data.spouseSocialSecurity || 0) > 0) || false;
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Income Sources Through Retirement</CardTitle>
-        <CardDescription>
+    <Card className="w-full">
+      <CardHeader className="px-4 sm:px-6">
+        <CardTitle className="text-xl sm:text-2xl">Income Sources Through Retirement</CardTitle>
+        <CardDescription className="text-sm">
           Visualizing the transition from working income to retirement income
           {ssStartAge > 0 && <span className="block mt-1 text-sm">Social Security begins at age {ssStartAge}</span>}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+      <CardContent className="px-4 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
           <div className="text-sm">
             <p className="font-medium">Primary Working Income:</p>
             <p>{formatCurrency(primaryWorkingIncome)}/year</p>
