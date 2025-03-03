@@ -5,11 +5,14 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
   const data: IncomeSourcesDataPoint[] = [];
   const currentAge = inputs.currentAge;
   const retirementAge = inputs.retirementAge;
+  const spouseAge = inputs.spouseAge || 0;
+  const spouseRetirementAge = inputs.spouseRetirementAge || 0;
   const lifeExpectancy = inputs.lifeExpectancy || 90;
   const ssStartAge = inputs.ssStartAge || 67;
   
   // Income growth rate with more conservative cap
   const incomeGrowthRate = Math.min(inputs.incomeGrowthRate || 0.03, 0.04); // Cap at 4%
+  const spouseIncomeGrowthRate = Math.min(inputs.spouseIncomeGrowthRate || 0.03, 0.04); // Cap at 4%
   
   // Calculate retirement savings at retirement age (simplified)
   const retirementSavingsAtRetirement = calculateProjectedRetirementSavings(inputs);
@@ -28,29 +31,44 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
     let rmd = 0;
     let taxable = 0;
     
+    // Calculate corresponding spouse age for this year
+    const spouseCurrentAge = spouseAge ? age - currentAge + spouseAge : 0;
+    
     if (age < retirementAge) {
       // Pre-retirement: employment income with growth
       const yearsWorking = age - currentAge;
       employment = (inputs.annualIncome || 0) * Math.pow(1 + incomeGrowthRate, yearsWorking);
       employment = Math.min(employment, 400000); // Cap at $400K
       
-      // Add spouse income if applicable
-      if (inputs.spouseIncome && inputs.spouseIncome > 0 && inputs.spouseAge) {
-        const spouseIncomeGrowthRate = Math.min(inputs.spouseIncomeGrowthRate || 0.03, 0.04);
-        const spouseIncome = inputs.spouseIncome * Math.pow(1 + spouseIncomeGrowthRate, yearsWorking);
-        employment += Math.min(spouseIncome, 400000);
+      // Add spouse income if applicable - but only until spouse's retirement age
+      if (inputs.spouseIncome && inputs.spouseIncome > 0 && spouseAge) {
+        if (spouseCurrentAge < spouseRetirementAge) {
+          const spouseYearsWorking = spouseCurrentAge - spouseAge + (currentAge - spouseAge);
+          const spouseIncome = inputs.spouseIncome * Math.pow(1 + spouseIncomeGrowthRate, spouseYearsWorking);
+          employment += Math.min(spouseIncome, 400000);
+        }
       }
     } else {
       // Post-retirement income sources
+      
+      // If primary person is retired but spouse is still working
+      if (inputs.spouseIncome && inputs.spouseIncome > 0 && spouseAge && spouseCurrentAge < spouseRetirementAge) {
+        const spouseYearsWorking = spouseCurrentAge - spouseAge + (currentAge - spouseAge);
+        const spouseIncome = inputs.spouseIncome * Math.pow(1 + spouseIncomeGrowthRate, spouseYearsWorking);
+        employment += Math.min(spouseIncome, 400000);
+      }
       
       // Social Security (starts at SS age)
       if (age >= ssStartAge) {
         // Base Social Security on income or specified benefit
         socialSecurity = inputs.socialSecurityBenefit || 0;
         
-        // Add spouse SS if applicable
+        // Add spouse SS if applicable and if spouse has reached SS age
         if (inputs.spouseSocialSecurityBenefit && inputs.spouseSocialSecurityBenefit > 0) {
-          socialSecurity += inputs.spouseSocialSecurityBenefit;
+          // Assuming spouse's SS age is the same as primary
+          if (spouseCurrentAge >= ssStartAge) {
+            socialSecurity += inputs.spouseSocialSecurityBenefit;
+          }
         }
       }
       
