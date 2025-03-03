@@ -1,11 +1,10 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import WithdrawalStrategyChart from "../charts/WithdrawalStrategyChart";
 import { RetirementPlan } from "@/lib/calculator/types";
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
-import { formatCurrency } from "@/lib/calculator/formatters";
+import { formatSummaryValue } from "../utils/formatters";
 
 interface WithdrawalStrategyTabProps {
   plan: RetirementPlan;
@@ -55,7 +54,7 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
           <CardContent>
             <div className="space-y-1">
               <p className="text-2xl font-bold">
-                {formatCurrency(initialWithdrawals.conservative, 0)}
+                {formatSummaryValue(initialWithdrawals.conservative, 0)}
                 <span className="text-sm font-normal text-muted-foreground ml-1">/ year</span>
               </p>
               <p className="text-sm text-muted-foreground">
@@ -75,7 +74,7 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
           <CardContent>
             <div className="space-y-1">
               <p className="text-2xl font-bold">
-                {formatCurrency(initialWithdrawals.moderate, 0)}
+                {formatSummaryValue(initialWithdrawals.moderate, 0)}
                 <span className="text-sm font-normal text-muted-foreground ml-1">/ year</span>
               </p>
               <p className="text-sm text-muted-foreground">
@@ -95,7 +94,7 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
           <CardContent>
             <div className="space-y-1">
               <p className="text-2xl font-bold">
-                {formatCurrency(initialWithdrawals.aggressive, 0)}
+                {formatSummaryValue(initialWithdrawals.aggressive, 0)}
                 <span className="text-sm font-normal text-muted-foreground ml-1">/ year</span>
               </p>
               <p className="text-sm text-muted-foreground">
