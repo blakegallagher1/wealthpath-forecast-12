@@ -1,6 +1,6 @@
 
 import { useMemo } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from "recharts";
 import { useTheme } from "@/hooks/use-theme";
 import { WithdrawalStrategyDataPoint } from "@/lib/calculator/types";
 import { formatChartCurrency } from "./utils/chartFormatters";
@@ -28,7 +28,6 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
 
   // Find depletion points (when balance hits zero or very low)
   const findDepletionAge = (key: 'aggressive' | 'moderate' | 'conservative') => {
-    // Consider "depleted" when balance falls below 1% of maximum value
     const maxValue = Math.max(...data.map(d => d[key]));
     const threshold = maxValue * 0.01;
     
@@ -90,20 +89,32 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
           }}
         />
         
-        {/* Reference line for retirement age */}
+        {/* Retirement age reference line */}
         {retirementAge && (
-          <Line
-            type="monotone"
-            dataKey="conservative"
-            stroke={colors.conservative}
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 6 }}
-            name="conservative"
+          <ReferenceLine
+            x={retirementAge}
+            stroke={colors.referenceLines}
+            strokeDasharray="3 3"
+            label={{
+              value: "Retirement",
+              position: "insideTopRight",
+              fill: colors.text,
+              fontSize: 12
+            }}
           />
         )}
         
         {/* Strategy lines */}
+        <Line
+          type="monotone"
+          dataKey="conservative"
+          stroke={colors.conservative}
+          strokeWidth={2}
+          dot={false}
+          activeDot={{ r: 6 }}
+          name="conservative"
+        />
+        
         <Line
           type="monotone"
           dataKey="moderate"

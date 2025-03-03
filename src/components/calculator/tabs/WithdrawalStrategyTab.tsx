@@ -15,7 +15,7 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
   // Find the withdrawal values at retirement age
   const retirementData = plan.withdrawalStrategyData.find(d => d.isRetirementAge);
   
-  // If we have retirement data, calculate initial withdrawal amounts
+  // Calculate initial annual withdrawal amounts based on the withdrawal rates
   const initialWithdrawals = retirementData ? {
     conservative: retirementData.conservative * 0.03,
     moderate: retirementData.moderate * 0.04,
