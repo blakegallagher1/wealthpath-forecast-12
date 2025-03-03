@@ -48,20 +48,20 @@ const CalculatorContent = ({
           transition={{ duration: 0.3 }}
         >
           {activeTab === "inputs" && (
-            <div>
+            <div className="space-y-4 sm:space-y-6">
               <InputDashboard />
               <InputForm inputs={inputs} onChange={handleInputChange} />
               <div className="mt-8 flex justify-end space-x-4">
                 <Button 
                   variant="outline" 
                   onClick={handleReset}
-                  className="px-6"
+                  className="px-4 sm:px-6"
                 >
                   Reset
                 </Button>
                 <Button 
                   onClick={handleCalculate}
-                  className="px-8"
+                  className="px-6 sm:px-8"
                 >
                   Calculate
                 </Button>

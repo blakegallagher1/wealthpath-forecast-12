@@ -20,14 +20,16 @@ interface ResultsTabsProps {
 const ResultsTabs = ({ plan, inputs, activeTab, setActiveTab }: ResultsTabsProps) => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid grid-cols-2 md:grid-cols-6 h-12">
-        <TabsTrigger value="summary" className="text-xs md:text-sm">Summary</TabsTrigger>
-        <TabsTrigger value="networth" className="text-xs md:text-sm">Net Worth</TabsTrigger>
-        <TabsTrigger value="income" className="text-xs md:text-sm">Income Sources</TabsTrigger>
-        <TabsTrigger value="withdrawal" className="text-xs md:text-sm">Withdrawal Strategy</TabsTrigger>
-        <TabsTrigger value="risk" className="text-xs md:text-sm">Risk Analysis</TabsTrigger>
-        <TabsTrigger value="debt" className="text-xs md:text-sm">Debt Payoff</TabsTrigger>
-      </TabsList>
+      <div className="overflow-x-auto pb-2">
+        <TabsList className="grid grid-cols-3 md:grid-cols-6 h-auto min-w-max">
+          <TabsTrigger value="summary" className="text-xs md:text-sm py-3">Summary</TabsTrigger>
+          <TabsTrigger value="networth" className="text-xs md:text-sm py-3">Net Worth</TabsTrigger>
+          <TabsTrigger value="income" className="text-xs md:text-sm py-3">Income Sources</TabsTrigger>
+          <TabsTrigger value="withdrawal" className="text-xs md:text-sm py-3">Withdrawal Strategy</TabsTrigger>
+          <TabsTrigger value="risk" className="text-xs md:text-sm py-3">Risk Analysis</TabsTrigger>
+          <TabsTrigger value="debt" className="text-xs md:text-sm py-3">Debt Payoff</TabsTrigger>
+        </TabsList>
+      </div>
 
       <div className="mt-6">
         <motion.div

@@ -62,4 +62,23 @@
   .recharts-tooltip-wrapper {
     max-width: 80vw !important;
   }
+
+  /* Improve form spacing on mobile */
+  .grid {
+    gap: 1rem !important;
+  }
+  
+  /* Ensure buttons are large enough for touch targets */
+  button {
+    min-height: 44px;
+  }
+}
+
+/* Make sure tables are responsive */
+@media (max-width: 768px) {
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+  }
 }
