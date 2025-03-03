@@ -60,6 +60,11 @@ export function generateWithdrawalStrategyData(inputs: CalculatorInputs): Withdr
   let moderateBalance = estimatedRetirementSavings;
   let aggressiveBalance = estimatedRetirementSavings;
   
+  // Variables to store initial withdrawal amounts
+  let initialConservativeWithdrawal = 0;
+  let initialModerateWithdrawal = 0;
+  let initialAggressiveWithdrawal = 0;
+  
   // Project for each year from current age to life expectancy
   for (let age = currentAge; age <= lifeExpectancy; age++) {
     const year = new Date().getFullYear() + (age - currentAge);
@@ -75,15 +80,10 @@ export function generateWithdrawalStrategyData(inputs: CalculatorInputs): Withdr
       const yearsSinceRetirement = age - retirementAge;
       
       // Calculate initial withdrawal amounts at retirement
-      const initialConservativeWithdrawal = isRetirementAge ? conservativeBalance * conservativeRate : 0;
-      const initialModerateWithdrawal = isRetirementAge ? moderateBalance * moderateRate : 0;
-      const initialAggressiveWithdrawal = isRetirementAge ? aggressiveBalance * aggressiveRate : 0;
-      
-      // Store initial withdrawals for inflation adjustment in subsequent years
       if (isRetirementAge) {
-        data.initialConservativeWithdrawal = initialConservativeWithdrawal;
-        data.initialModerateWithdrawal = initialModerateWithdrawal;
-        data.initialAggressiveWithdrawal = initialAggressiveWithdrawal;
+        initialConservativeWithdrawal = conservativeBalance * conservativeRate;
+        initialModerateWithdrawal = moderateBalance * moderateRate;
+        initialAggressiveWithdrawal = aggressiveBalance * aggressiveRate;
       }
       
       // Inflation adjustment for withdrawals in subsequent years
@@ -92,15 +92,15 @@ export function generateWithdrawalStrategyData(inputs: CalculatorInputs): Withdr
       // Calculate the actual withdrawal for this year (inflation-adjusted)
       const conservativeWithdrawal = yearsSinceRetirement === 0 
         ? initialConservativeWithdrawal 
-        : (data.initialConservativeWithdrawal || 0) * inflationMultiplier;
+        : initialConservativeWithdrawal * inflationMultiplier;
       
       const moderateWithdrawal = yearsSinceRetirement === 0 
         ? initialModerateWithdrawal 
-        : (data.initialModerateWithdrawal || 0) * inflationMultiplier;
+        : initialModerateWithdrawal * inflationMultiplier;
       
       const aggressiveWithdrawal = yearsSinceRetirement === 0 
         ? initialAggressiveWithdrawal 
-        : (data.initialAggressiveWithdrawal || 0) * inflationMultiplier;
+        : initialAggressiveWithdrawal * inflationMultiplier;
       
       // Apply withdrawals and real returns (already adjusted for inflation)
       conservativeBalance = Math.max(0, (conservativeBalance - conservativeWithdrawal) * 
