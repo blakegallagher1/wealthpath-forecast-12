@@ -1,4 +1,5 @@
 import { CalculatorInputs, IncomeSourcesDataPoint } from "./types";
+import { calculateAIME, calculatePIA, adjustPIAForClaimingAge } from "./socialSecurityCalculator";
 
 export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourcesDataPoint[] {
   const data: IncomeSourcesDataPoint[] = [];
@@ -10,14 +11,38 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
   const ssStartAge = inputs.ssStartAge || 67;
   
   // Income growth rate with more conservative cap
-  const incomeGrowthRate = Math.min(inputs.incomeGrowthRate || 0.03, 0.04); // Cap at 4%
-  const spouseIncomeGrowthRate = Math.min(inputs.spouseIncomeGrowthRate || 0.03, 0.04); // Cap at 4%
+  const incomeGrowthRate = Math.min(inputs.incomeGrowthRate || 0.03, 0.04) / 100; // Cap at 4%
+  const spouseIncomeGrowthRate = Math.min(inputs.spouseIncomeGrowthRate || 0.03, 0.04) / 100; // Cap at 4%
   
   // Calculate retirement savings at retirement age (simplified)
   const retirementSavingsAtRetirement = calculateProjectedRetirementSavings(inputs);
   
   // Withdrawal rate from retirement plan
   const withdrawalRate = inputs.retirementWithdrawalRate / 100 || 0.04; // Default to 4%
+  
+  // Pre-calculate Social Security benefits
+  let monthlySSBenefit = 0;
+  let monthlySpouseSSBenefit = 0;
+  
+  // Calculate SS benefits based on income or use provided values
+  if (inputs.socialSecurityBenefit && inputs.socialSecurityBenefit > 0) {
+    monthlySSBenefit = inputs.socialSecurityBenefit;
+  } else {
+    // Use highest career income as basis (assume growth continues)
+    const highestIncome = inputs.annualIncome * Math.pow(1 + incomeGrowthRate, retirementAge - currentAge);
+    const aime = Math.min(highestIncome, 168600) / 12;
+    const pia = calculatePIA(aime);
+    monthlySSBenefit = adjustPIAForClaimingAge(pia, ssStartAge);
+  }
+  
+  if (inputs.spouseSocialSecurityBenefit && inputs.spouseSocialSecurityBenefit > 0) {
+    monthlySpouseSSBenefit = inputs.spouseSocialSecurityBenefit;
+  } else if (inputs.spouseIncome && inputs.spouseIncome > 0) {
+    const highestSpouseIncome = inputs.spouseIncome * Math.pow(1 + spouseIncomeGrowthRate, spouseRetirementAge - spouseAge);
+    const spouseAime = Math.min(highestSpouseIncome, 168600) / 12;
+    const spousePia = calculatePIA(spouseAime);
+    monthlySpouseSSBenefit = adjustPIAForClaimingAge(spousePia, ssStartAge);
+  }
   
   for (let age = currentAge; age <= lifeExpectancy; age++) {
     const year = new Date().getFullYear() + (age - currentAge);
@@ -54,14 +79,14 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
     if (age >= retirementAge) {
       // Social Security (starts at SS age)
       if (age >= ssStartAge) {
-        // Base Social Security on specified benefit
-        socialSecurity = inputs.socialSecurityBenefit || 0;
+        // Add primary SS benefit
+        socialSecurity = monthlySSBenefit * 12;
         
         // Add spouse SS if applicable and if spouse has reached SS age
-        if (inputs.spouseSocialSecurityBenefit && inputs.spouseSocialSecurityBenefit > 0) {
+        if (monthlySpouseSSBenefit > 0) {
           // Assuming spouse's SS age is the same as primary
           if (spouseCurrentAge >= ssStartAge) {
-            socialSecurity += inputs.spouseSocialSecurityBenefit;
+            socialSecurity += monthlySpouseSSBenefit * 12;
           }
         }
       }
@@ -146,4 +171,66 @@ function calculateProjectedRetirementSavings(inputs: CalculatorInputs): number {
   }
   
   return futureValue;
+}
+
+// Helper functions for Social Security calculation
+function calculateAIME(annualIncome: number): number {
+  // Social Security uses the highest 35 years of earnings
+  // For simplicity, we'll assume current income represents career average
+  // Adjust income to be within the Social Security wage base limit ($168,600 for 2024)
+  const cappedIncome = Math.min(annualIncome, 168600);
+  
+  // AIME is based on monthly income
+  return cappedIncome / 12;
+}
+
+function calculatePIA(aime: number): number {
+  // PIA formula uses bend points
+  // 90% of AIME up to first bend point
+  // 32% of AIME between first and second bend points
+  // 15% of AIME above second bend point
+  const firstBendPoint = 1174;
+  const secondBendPoint = 7084;
+  
+  let pia = 0;
+  
+  if (aime <= firstBendPoint) {
+    pia = aime * 0.9;
+  } else if (aime <= secondBendPoint) {
+    pia = (firstBendPoint * 0.9) + ((aime - firstBendPoint) * 0.32);
+  } else {
+    pia = (firstBendPoint * 0.9) + ((secondBendPoint - firstBendPoint) * 0.32) + ((aime - secondBendPoint) * 0.15);
+  }
+  
+  // Round to nearest dollar as Social Security does
+  return Math.round(pia);
+}
+
+function adjustPIAForClaimingAge(pia: number, claimingAge: number): number {
+  // Full retirement age (FRA) is 67 for those born in 1960 or later
+  const fra = 67;
+  
+  if (claimingAge === fra) {
+    // At FRA, receive 100% of PIA
+    return pia;
+  } else if (claimingAge < fra) {
+    // Before FRA, reduce by 5/9 of 1% for each month up to 36 months
+    // and 5/12 of 1% for each additional month
+    const monthsEarly = (fra - claimingAge) * 12;
+    let reductionFactor = 0;
+    
+    if (monthsEarly <= 36) {
+      reductionFactor = monthsEarly * (5/9) * 0.01;
+    } else {
+      reductionFactor = (36 * (5/9) * 0.01) + ((monthsEarly - 36) * (5/12) * 0.01);
+    }
+    
+    return pia * (1 - reductionFactor);
+  } else {
+    // After FRA, increase by 8% per year (2/3 of 1% per month)
+    const monthsLate = (claimingAge - fra) * 12;
+    const increaseFactor = monthsLate * (2/3) * 0.01;
+    
+    return pia * (1 + increaseFactor);
+  }
 }

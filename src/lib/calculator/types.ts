@@ -1,4 +1,3 @@
-
 export interface CalculatorInputs {
   // Personal details
   name: string;
@@ -58,8 +57,8 @@ export interface CalculatorInputs {
   inflationRate: number;
   retirementWithdrawalRate: number;
   lifeExpectancy: number;
-  socialSecurityBenefit: number;
-  spouseSocialSecurityBenefit: number;
+  socialSecurityBenefit?: number; // Made optional since we'll calculate it
+  spouseSocialSecurityBenefit?: number; // Made optional since we'll calculate it
 }
 
 export interface NetWorthDataPoint {

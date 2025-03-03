@@ -26,6 +26,9 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
 
   // Find retirement age in data for reference line
   const retirementAge = data.find(d => d.isRetirementAge)?.age;
+  
+  // Find Social Security start age if it exists in the data
+  const ssStartAge = data.findIndex(d => d.socialSecurity > 0)?.toString();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -117,7 +120,7 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
           stackId="1"
           stroke={colors.socialSecurity}
           fill={colors.socialSecurity}
-          name="Social Security"
+          name="Social Security (Auto-Calculated)"
         />
         <Area
           type="monotone"
