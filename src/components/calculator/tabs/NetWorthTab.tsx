@@ -20,7 +20,7 @@ const NetWorthTab = ({ plan }: NetWorthTabProps) => {
           Breakdown of your projected net worth over time
         </CardDescription>
       </CardHeader>
-      <CardContent className="h-[96px]">
+      <CardContent className="h-96">
         {hasData ? (
           <NetWorthChart data={plan.netWorthData} />
         ) : (
