@@ -139,10 +139,9 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
             strokeDasharray="5 5"
             label={{
               value: 'Retirement',
-              position: 'insideTopRight',
+              position: 'topRight',
               fontSize: 11,
-              fill: '#0891b2',
-              offset: 5
+              fill: '#0891b2'
             }}
           />
         )}

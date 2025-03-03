@@ -1,4 +1,3 @@
-
 import { CalculatorInputs, NetWorthDataPoint } from "./types";
 import { calculateLifeEventsImpact } from "./netWorthLifeEventsCalculator";
 import { calculateInvestmentGrowth } from "./netWorthInvestmentCalculator";
@@ -20,9 +19,9 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
   let retirementAccounts = inputs.retirementAccounts;
   let rothAccounts = inputs.rothAccounts;
   let taxableInvestments = inputs.taxableInvestments;
-  let realEstateEquity = inputs.realEstateEquity;
-  let mortgageBalance = inputs.mortgageBalance;
-  let otherDebts = inputs.studentLoanBalance + inputs.autoLoanBalance + inputs.creditCardBalance;
+  let realEstateEquity = inputs.realEstateEquity || 0;
+  let mortgageBalance = inputs.mortgageBalance || 0;
+  let otherDebts = (inputs.studentLoanBalance || 0) + (inputs.autoLoanBalance || 0) + (inputs.creditCardBalance || 0);
   
   // Calculate annual expenses and savings
   const annualExpenses = (inputs.annualIncome + (inputs.spouseIncome || 0)) * ((inputs.expensePercentOfIncome || 70) / 100);
@@ -53,8 +52,8 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
   const maxRealEstateCycleLength = 8; // Real estate cycles tend to be longer than stock market cycles
   
   // Base real estate appreciation rate (default 3% if not specified)
-  const baseRealEstateAppreciationRate = 0.03; // 3% annual appreciation
-  const realEstateVolatility = 0.03; // Lower volatility than stocks
+  const baseRealEstateAppreciationRate = inputs.realEstateAppreciationRate ? inputs.realEstateAppreciationRate / 100 : 0.03;
+  const realEstateVolatility = 0.02; // Lower volatility than stocks
   
   // Keep track of home value separate from equity
   let homeValue = realEstateEquity + mortgageBalance;
@@ -116,7 +115,11 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
     const u2 = Math.random();
     const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
     const cycleFactor = 1 + realEstateMarketCycle * 0.3; // ±30% adjustment based on cycle
-    const realEstateReturn = Math.max(-0.15, (baseRealEstateAppreciationRate + realEstateVolatility * z) * cycleFactor);
+    
+    // The real estate return should be more conservative and less volatile
+    // We'll cap it between -5% and +15% after all adjustments
+    const rawRealEstateReturn = (baseRealEstateAppreciationRate + realEstateVolatility * z) * cycleFactor;
+    const realEstateReturn = Math.min(0.15, Math.max(-0.05, rawRealEstateReturn));
     
     // Update investment accounts based on whether retired or not
     const investmentUpdates = calculateInvestmentGrowth(
@@ -137,24 +140,27 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
     marketCycle = investmentUpdates.marketCycle;
     
     // Real estate appreciation with market cycle effects
-    homeValue *= (1 + realEstateReturn);
-    
-    // Mortgage amortization calculation
-    if (mortgageBalance > 0) {
-      // Calculate interest portion of payment
-      const annualInterest = mortgageBalance * mortgageRate;
+    // Only apply real estate appreciation if there is actually real estate
+    if (homeValue > 0) {
+      homeValue *= (1 + realEstateReturn);
       
-      // Calculate principal portion of payment
-      const principalPayment = Math.min(annualMortgagePayment - annualInterest, mortgageBalance);
-      
-      // Update mortgage balance
-      mortgageBalance = Math.max(0, mortgageBalance - principalPayment);
-      
-      // Update real estate equity based on new home value and mortgage balance
-      realEstateEquity = homeValue - mortgageBalance;
-    } else {
-      // If mortgage is paid off, all home value is equity
-      realEstateEquity = homeValue;
+      // Mortgage amortization calculation
+      if (mortgageBalance > 0) {
+        // Calculate interest portion of payment
+        const annualInterest = mortgageBalance * mortgageRate;
+        
+        // Calculate principal portion of payment
+        const principalPayment = Math.min(annualMortgagePayment - annualInterest, mortgageBalance);
+        
+        // Update mortgage balance
+        mortgageBalance = Math.max(0, mortgageBalance - principalPayment);
+        
+        // Update real estate equity based on new home value and mortgage balance
+        realEstateEquity = homeValue - mortgageBalance;
+      } else {
+        // If mortgage is paid off, all home value is equity
+        realEstateEquity = homeValue;
+      }
     }
     
     // Reduce other debts - add some randomness to debt payoff rate
