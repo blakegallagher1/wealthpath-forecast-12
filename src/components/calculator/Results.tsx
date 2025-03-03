@@ -5,6 +5,7 @@ import { CalculatorInputs, RetirementPlan } from "@/lib/calculator/types";
 import RetirementSummary from "./RetirementSummary";
 import ResultsTabs from "./results/ResultsTabs";
 import ActionButtons from "./results/ActionButtons";
+import CalculatorAssumptions from "./results/CalculatorAssumptions";
 
 interface ResultsProps {
   plan: RetirementPlan;
@@ -36,6 +37,8 @@ const Results = ({ plan, inputs, onRecalculate }: ResultsProps) => {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
       />
+
+      {activeTab === "summary" && <CalculatorAssumptions />}
 
       <ActionButtons 
         onRecalculate={onRecalculate} 
