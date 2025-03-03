@@ -13,22 +13,62 @@ export const generateDebtPayoffData = (inputs: CalculatorInputs): DebtPayoffData
   let autoLoanBalance = inputs.autoLoanBalance;
   let creditCardBalance = inputs.creditCardBalance;
   
-  // Estimated annual payments (simplified model)
-  // Mortgage: 30-year term with fixed payment
-  const mortgageYearsRemaining = mortgageBalance > 0 ? 30 : 0;
-  const annualMortgagePayment = mortgageBalance > 0 ? (mortgageBalance / mortgageYearsRemaining) * 1.1 : 0; // Adding 10% for interest
+  // Calculate mortgage payment using amortization formula
+  const mortgageRate = inputs.mortgageInterestRate / 100;
+  const mortgageYearsRemaining = 30; // Standard 30-year mortgage
+  const monthlyRate = mortgageRate / 12;
+  const numberOfPayments = mortgageYearsRemaining * 12;
+  
+  // Calculate monthly mortgage payment using the amortization formula
+  // P = L[c(1 + c)^n]/[(1 + c)^n - 1]
+  // where P = payment, L = loan amount, c = monthly interest rate, n = number of payments
+  let monthlyMortgagePayment = 0;
+  if (mortgageBalance > 0 && mortgageRate > 0) {
+    monthlyMortgagePayment = mortgageBalance * 
+                            (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
+                            (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+  }
+  
+  const annualMortgagePayment = monthlyMortgagePayment * 12;
   
   // Student loans: 10-year term
-  const studentLoanYearsRemaining = studentLoanBalance > 0 ? 10 : 0;
-  const annualStudentLoanPayment = studentLoanBalance > 0 ? (studentLoanBalance / studentLoanYearsRemaining) * 1.05 : 0; // Adding 5% for interest
+  const studentLoanRate = inputs.studentLoanInterestRate / 100;
+  const studentLoanYearsRemaining = 10;
+  let annualStudentLoanPayment = 0;
+  if (studentLoanBalance > 0 && studentLoanRate > 0) {
+    const monthlyStudentLoanRate = studentLoanRate / 12;
+    const studentLoanPayments = studentLoanYearsRemaining * 12;
+    const monthlyStudentLoanPayment = studentLoanBalance * 
+                                      (monthlyStudentLoanRate * Math.pow(1 + monthlyStudentLoanRate, studentLoanPayments)) / 
+                                      (Math.pow(1 + monthlyStudentLoanRate, studentLoanPayments) - 1);
+    annualStudentLoanPayment = monthlyStudentLoanPayment * 12;
+  }
   
   // Auto loans: 5-year term
-  const autoLoanYearsRemaining = autoLoanBalance > 0 ? 5 : 0;
-  const annualAutoLoanPayment = autoLoanBalance > 0 ? (autoLoanBalance / autoLoanYearsRemaining) * 1.04 : 0; // Adding 4% for interest
+  const autoLoanRate = inputs.autoLoanInterestRate / 100;
+  const autoLoanYearsRemaining = 5;
+  let annualAutoLoanPayment = 0;
+  if (autoLoanBalance > 0 && autoLoanRate > 0) {
+    const monthlyAutoLoanRate = autoLoanRate / 12;
+    const autoLoanPayments = autoLoanYearsRemaining * 12;
+    const monthlyAutoLoanPayment = autoLoanBalance * 
+                                  (monthlyAutoLoanRate * Math.pow(1 + monthlyAutoLoanRate, autoLoanPayments)) / 
+                                  (Math.pow(1 + monthlyAutoLoanRate, autoLoanPayments) - 1);
+    annualAutoLoanPayment = monthlyAutoLoanPayment * 12;
+  }
   
   // Credit cards: aggressive payoff (2 years)
-  const creditCardYearsRemaining = creditCardBalance > 0 ? 2 : 0;
-  const annualCreditCardPayment = creditCardBalance > 0 ? (creditCardBalance / creditCardYearsRemaining) * 1.18 : 0; // Adding 18% for interest
+  const creditCardRate = inputs.creditCardInterestRate / 100;
+  const creditCardYearsRemaining = 2;
+  let annualCreditCardPayment = 0;
+  if (creditCardBalance > 0 && creditCardRate > 0) {
+    const monthlyCreditCardRate = creditCardRate / 12;
+    const creditCardPayments = creditCardYearsRemaining * 12;
+    const monthlyCreditCardPayment = creditCardBalance * 
+                                    (monthlyCreditCardRate * Math.pow(1 + monthlyCreditCardRate, creditCardPayments)) / 
+                                    (Math.pow(1 + monthlyCreditCardRate, creditCardPayments) - 1);
+    annualCreditCardPayment = monthlyCreditCardPayment * 12;
+  }
 
   // Variables for planned home purchase
   const planningHomePurchase = inputs.planningHomePurchase;
@@ -48,6 +88,14 @@ export const generateDebtPayoffData = (inputs: CalculatorInputs): DebtPayoffData
       
       // Add new mortgage to existing mortgage (if there is one)
       mortgageBalance += newMortgage;
+      
+      // Recalculate mortgage payment with new balance
+      if (mortgageBalance > 0 && mortgageRate > 0) {
+        monthlyMortgagePayment = mortgageBalance * 
+                                (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
+                                (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+        annualMortgagePayment = monthlyMortgagePayment * 12;
+      }
     }
     
     // Calculate total debt for this year
@@ -65,11 +113,38 @@ export const generateDebtPayoffData = (inputs: CalculatorInputs): DebtPayoffData
       isRetirementAge: age === inputs.retirementAge,
     });
     
-    // Update balances for next year
-    mortgageBalance = Math.max(0, mortgageBalance - annualMortgagePayment);
-    studentLoanBalance = Math.max(0, studentLoanBalance - annualStudentLoanPayment);
-    autoLoanBalance = Math.max(0, autoLoanBalance - annualAutoLoanPayment);
-    creditCardBalance = Math.max(0, creditCardBalance - annualCreditCardPayment);
+    // Mortgage amortization calculation
+    if (mortgageBalance > 0) {
+      // Calculate interest portion of payment
+      const annualInterest = mortgageBalance * mortgageRate;
+      
+      // Calculate principal portion of payment
+      const principalPayment = Math.min(annualMortgagePayment - annualInterest, mortgageBalance);
+      
+      // Update mortgage balance
+      mortgageBalance = Math.max(0, mortgageBalance - principalPayment);
+    }
+    
+    // Student loan amortization
+    if (studentLoanBalance > 0) {
+      const annualStudentLoanInterest = studentLoanBalance * studentLoanRate;
+      const studentLoanPrincipal = Math.min(annualStudentLoanPayment - annualStudentLoanInterest, studentLoanBalance);
+      studentLoanBalance = Math.max(0, studentLoanBalance - studentLoanPrincipal);
+    }
+    
+    // Auto loan amortization
+    if (autoLoanBalance > 0) {
+      const annualAutoLoanInterest = autoLoanBalance * autoLoanRate;
+      const autoLoanPrincipal = Math.min(annualAutoLoanPayment - annualAutoLoanInterest, autoLoanBalance);
+      autoLoanBalance = Math.max(0, autoLoanBalance - autoLoanPrincipal);
+    }
+    
+    // Credit card amortization
+    if (creditCardBalance > 0) {
+      const annualCreditCardInterest = creditCardBalance * creditCardRate;
+      const creditCardPrincipal = Math.min(annualCreditCardPayment - annualCreditCardInterest, creditCardBalance);
+      creditCardBalance = Math.max(0, creditCardBalance - creditCardPrincipal);
+    }
   }
   
   return data;

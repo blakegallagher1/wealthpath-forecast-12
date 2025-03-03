@@ -1,3 +1,4 @@
+
 import { CalculatorInputs, NetWorthDataPoint } from "./types";
 import { calculateLifeEventsImpact } from "./netWorthLifeEventsCalculator";
 import { calculateInvestmentGrowth } from "./netWorthInvestmentCalculator";
@@ -28,10 +29,23 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
   let annualSavings = (inputs.annualIncome + inputs.spouseIncome + inputs.annualBonusAmount) - annualExpenses - 
                       inputs.annual401kContribution - inputs.annualRothContribution - inputs.annualTaxableContribution;
   
-  // Calculate annual mortgage principal payment based on remaining balance and years
-  // Assuming 30-year mortgage total term
-  const mortgageYearsRemaining = mortgageBalance > 0 ? 30 : 0;
-  let annualMortgagePayment = mortgageBalance > 0 ? mortgageBalance / mortgageYearsRemaining : 0;
+  // Calculate mortgage payment using amortization formula
+  const mortgageRate = inputs.mortgageInterestRate / 100;
+  const mortgageYearsRemaining = 30; // Standard 30-year mortgage
+  const monthlyRate = mortgageRate / 12;
+  const numberOfPayments = mortgageYearsRemaining * 12;
+  
+  // Calculate monthly mortgage payment using the amortization formula
+  // P = L[c(1 + c)^n]/[(1 + c)^n - 1]
+  // where P = payment, L = loan amount, c = monthly interest rate, n = number of payments
+  let monthlyMortgagePayment = 0;
+  if (mortgageBalance > 0 && mortgageRate > 0) {
+    monthlyMortgagePayment = mortgageBalance * 
+                            (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
+                            (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+  }
+  
+  const annualMortgagePayment = monthlyMortgagePayment * 12;
   
   // Calculate real estate appreciation rate (default 3% if not specified)
   const realEstateAppreciationRate = 0.03; // 3% annual appreciation
@@ -66,8 +80,14 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
       homeValue += homeValueAdjustment;
       mortgageBalance = newMortgageBalance;
       realEstateEquity = newEquity;
-      // Recalculate annual mortgage payment (assuming 30-year mortgage)
-      annualMortgagePayment = mortgageBalance > 0 ? mortgageBalance / 30 : 0;
+      
+      // Recalculate mortgage payment with new balance
+      if (mortgageBalance > 0 && mortgageRate > 0) {
+        monthlyMortgagePayment = mortgageBalance * 
+                                (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
+                                (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+        annualMortgagePayment = monthlyMortgagePayment * 12;
+      }
     }
     
     // Update investment accounts based on whether retired or not
@@ -89,10 +109,18 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
     // Real estate appreciation
     homeValue *= (1 + realEstateAppreciationRate);
     
-    // Mortgage payment - part goes to principal (increasing equity)
+    // Mortgage amortization calculation
     if (mortgageBalance > 0) {
-      const principalPayment = Math.min(annualMortgagePayment, mortgageBalance);
-      mortgageBalance -= principalPayment;
+      // Calculate interest portion of payment
+      const annualInterest = mortgageBalance * mortgageRate;
+      
+      // Calculate principal portion of payment
+      const principalPayment = Math.min(annualMortgagePayment - annualInterest, mortgageBalance);
+      
+      // Update mortgage balance
+      mortgageBalance = Math.max(0, mortgageBalance - principalPayment);
+      
+      // Update real estate equity based on new home value and mortgage balance
       realEstateEquity = homeValue - mortgageBalance;
     } else {
       // If mortgage is paid off, all home value is equity
