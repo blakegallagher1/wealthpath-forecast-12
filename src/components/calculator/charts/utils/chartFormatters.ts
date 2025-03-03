@@ -1,5 +1,6 @@
 
 import { WithdrawalStrategyDataPoint } from "@/lib/calculator/types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /**
  * Finds the age at which the portfolio is depleted for a given strategy
@@ -51,4 +52,58 @@ export const formatCurrencyForTooltip = (value: number): string => {
   } else {
     return `$${value.toFixed(0)}`;
   }
+};
+
+/**
+ * Formats a currency value for YAxis labels with proper abbreviation
+ * @param value The currency value to format
+ * @returns Formatted currency string
+ */
+export const formatYAxisTick = (value: number): string => {
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(0)}M`;
+  } else if (value >= 1000) {
+    return `$${(value / 1000).toFixed(0)}K`;
+  } else {
+    return `$${value}`;
+  }
+};
+
+/**
+ * Returns appropriate chart margins based on screen size
+ * @param isMobile Whether the current viewport is mobile
+ * @returns Object with margin values
+ */
+export const getChartMargins = (isMobile: boolean) => {
+  return isMobile 
+    ? { top: 10, right: 5, left: 5, bottom: 20 } 
+    : { top: 20, right: 30, left: 20, bottom: 30 };
+};
+
+/**
+ * Gets appropriate axis dimensions based on screen size
+ * @param isMobile Whether the current viewport is mobile
+ * @returns Object with axis dimension values
+ */
+export const getAxisDimensions = (isMobile: boolean) => {
+  return {
+    xAxisHeight: isMobile ? 25 : 30,
+    yAxisWidth: isMobile ? 50 : 70,
+    fontSize: isMobile ? 10 : 12
+  };
+};
+
+/**
+ * Creates a hook that returns chart dimensions based on screen size
+ */
+export const useChartDimensions = () => {
+  const isMobile = useIsMobile();
+  
+  return {
+    margins: getChartMargins(isMobile),
+    axis: getAxisDimensions(isMobile),
+    fontSize: isMobile ? 10 : 12,
+    strokeWidth: isMobile ? 1.5 : 2,
+    dotRadius: isMobile ? 4 : 6
+  };
 };
