@@ -17,7 +17,7 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
           Comparing different withdrawal rate strategies for your retirement
         </CardDescription>
       </CardHeader>
-      <CardContent className="h-[500px]">
+      <CardContent className="h-[600px]">
         <WithdrawalStrategyChart data={plan.withdrawalStrategyData} />
       </CardContent>
     </Card>

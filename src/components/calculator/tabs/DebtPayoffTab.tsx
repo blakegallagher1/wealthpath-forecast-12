@@ -17,7 +17,7 @@ const DebtPayoffTab = ({ plan }: DebtPayoffTabProps) => {
           Projected timeline for paying off your debts
         </CardDescription>
       </CardHeader>
-      <CardContent className="h-[500px]">
+      <CardContent className="h-[600px]">
         <DebtPayoffChart data={plan.debtPayoffData} />
       </CardContent>
     </Card>
