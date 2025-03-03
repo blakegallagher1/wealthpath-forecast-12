@@ -60,5 +60,5 @@ export const calculatorDefaults: CalculatorInputs = {
   // Financial assumptions
   inflationRate: 2.5,
   retirementWithdrawalRate: 4.0,
-  lifeExpectancy: 90,
+  lifeExpectancy: 95,
 };
