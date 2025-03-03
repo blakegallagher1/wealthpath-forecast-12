@@ -29,7 +29,7 @@ export const generateDebtPayoffData = (inputs: CalculatorInputs): DebtPayoffData
                             (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
   }
   
-  const annualMortgagePayment = monthlyMortgagePayment * 12;
+  let annualMortgagePayment = monthlyMortgagePayment * 12;
   
   // Student loans: 10-year term
   const studentLoanRate = inputs.studentLoanInterestRate / 100;

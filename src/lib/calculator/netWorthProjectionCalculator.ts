@@ -45,7 +45,7 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
                             (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
   }
   
-  const annualMortgagePayment = monthlyMortgagePayment * 12;
+  let annualMortgagePayment = monthlyMortgagePayment * 12;
   
   // Calculate real estate appreciation rate (default 3% if not specified)
   const realEstateAppreciationRate = 0.03; // 3% annual appreciation
