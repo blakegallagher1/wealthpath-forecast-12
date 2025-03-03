@@ -1,3 +1,4 @@
+
 import { calculateNetWorthProjection } from "./netWorthCalculator";
 import { generateIncomeSourcesData } from "./incomeSourcesCalculator";
 import { generateWithdrawalStrategyData } from "./withdrawalStrategyCalculator";
@@ -102,7 +103,7 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
   const incomeSourcesData = generateIncomeSourcesData(inputs);
   const withdrawalStrategyData = generateWithdrawalStrategyData(inputs);
   const riskProfileData = generateRiskProfileData(inputs);
-  const socialSecurityData = generateSocialSecurityData(inputs);
+  // We already have socialSecurityData from above, no need to regenerate it
   const debtPayoffData = generateDebtPayoffData(inputs);
   
   return {
