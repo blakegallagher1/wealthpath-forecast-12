@@ -1,10 +1,11 @@
+
 import { CalculatorInputs, SocialSecurityDataPoint } from "./types";
 
 /**
  * Calculates the Average Indexed Monthly Earnings (AIME) based on annual income
  * This is a simplified calculation that approximates the SSA's method
  */
-function calculateAIME(annualIncome: number): number {
+export function calculateAIME(annualIncome: number): number {
   // Social Security uses the highest 35 years of earnings
   // For simplicity, we'll assume current income represents career average
   // Adjust income to be within the Social Security wage base limit ($168,600 for 2024)
@@ -18,7 +19,7 @@ function calculateAIME(annualIncome: number): number {
  * Calculates the Primary Insurance Amount (PIA) based on AIME
  * Using the 2024 bend points: $1,174 and $7,084
  */
-function calculatePIA(aime: number): number {
+export function calculatePIA(aime: number): number {
   // PIA formula uses bend points
   // 90% of AIME up to first bend point
   // 32% of AIME between first and second bend points
@@ -43,7 +44,7 @@ function calculatePIA(aime: number): number {
 /**
  * Apply age-based adjustments to PIA based on claiming age
  */
-function adjustPIAForClaimingAge(pia: number, claimingAge: number): number {
+export function adjustPIAForClaimingAge(pia: number, claimingAge: number): number {
   // Full retirement age (FRA) is 67 for those born in 1960 or later
   const fra = 67;
   
