@@ -6,7 +6,7 @@ import { RetirementPlan } from "@/lib/calculator/types";
 import { Badge } from "@/components/ui/badge";
 import { Info, AlertTriangle } from "lucide-react";
 import { formatSummaryValue } from "../utils/formatters";
-import { findDepletionAge } from "../charts/utils/chartFormatters";
+import { findDepletionAge, calculateLongevity } from "../charts/utils/chartFormatters";
 
 interface WithdrawalStrategyTabProps {
   plan: RetirementPlan;
@@ -32,9 +32,9 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
   const retirementAge = retirementData?.age || 65;
   
   // Calculate portfolio longevity in years for each strategy
-  const aggressiveLongevity = aggressiveDepletionAge ? aggressiveDepletionAge - retirementAge : 30+;
-  const moderateLongevity = moderateDepletionAge ? moderateDepletionAge - retirementAge : 30+;
-  const conservativeLongevity = conservativeDepletionAge ? conservativeDepletionAge - retirementAge : 30+;
+  const aggressiveLongevity = aggressiveDepletionAge ? aggressiveDepletionAge - retirementAge : 30;
+  const moderateLongevity = moderateDepletionAge ? moderateDepletionAge - retirementAge : 30;
+  const conservativeLongevity = conservativeDepletionAge ? conservativeDepletionAge - retirementAge : 30;
 
   return (
     <div className="space-y-6">
