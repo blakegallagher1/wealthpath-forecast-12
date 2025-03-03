@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useTheme } from "@/hooks/use-theme";
 import { WithdrawalStrategyDataPoint } from "@/lib/calculator/types";
 import { formatChartCurrency } from "./utils/chartFormatters";
+import { findDepletionAge } from "./utils/chartFormatters";
 
 interface WithdrawalStrategyChartProps {
   data: WithdrawalStrategyDataPoint[];
@@ -27,21 +28,16 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
   const retirementAge = retirementAgePoint?.age;
 
   // Find depletion points (when balance hits zero or very low)
-  const findDepletionAge = (key: 'aggressive' | 'moderate' | 'conservative') => {
-    const maxValue = Math.max(...data.map(d => d[key]));
-    const threshold = maxValue * 0.01;
-    
-    for (let i = data.length - 1; i >= 0; i--) {
-      if (data[i][key] > threshold) {
-        return data[i].age;
-      }
-    }
-    return null;
-  };
+  const aggressiveDepletionAge = findDepletionAge(data, 'aggressive');
+  const moderateDepletionAge = findDepletionAge(data, 'moderate');
+  const conservativeDepletionAge = findDepletionAge(data, 'conservative');
 
-  const aggressiveDepletionAge = findDepletionAge('aggressive');
-  const moderateDepletionAge = findDepletionAge('moderate');
-  const conservativeDepletionAge = findDepletionAge('conservative');
+  // Find balance at specific age (e.g., age 75) for annotation
+  const age75Data = data.find(point => point.age === 75);
+  
+  // Format domain for Y axis (make sure we have proper scale)
+  const maxValue = Math.max(...data.map(d => Math.max(d.conservative, d.moderate, d.aggressive)));
+  const yAxisMax = maxValue * 1.1; // Add 10% margin
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -60,15 +56,27 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
           tick={{ fill: colors.text, fontSize: 12 }}
+          domain={['dataMin', 'dataMax']}
+          type="number"
+          allowDecimals={false}
         />
         <YAxis 
           tickFormatter={(value) => formatChartCurrency(value)}
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
           tick={{ fill: colors.text, fontSize: 12 }}
+          domain={[0, yAxisMax]}
         />
         <Tooltip
-          formatter={(value: number) => [formatChartCurrency(value), ""]}
+          formatter={(value: number, name: string) => {
+            // Transform the name for the tooltip
+            const strategyName = name === "conservative" 
+              ? "Conservative (3%)" 
+              : name === "moderate" 
+                ? "Moderate (4%)" 
+                : "Aggressive (5%)";
+            return [formatChartCurrency(value), strategyName];
+          }}
           labelFormatter={(age) => `Age: ${age}`}
           contentStyle={{
             backgroundColor: isDark ? "#333" : "#fff",
@@ -104,12 +112,47 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
           />
         )}
         
+        {/* Depletion age reference lines */}
+        {aggressiveDepletionAge && (
+          <ReferenceLine
+            x={aggressiveDepletionAge}
+            stroke={colors.aggressive}
+            strokeDasharray="3 3"
+            strokeOpacity={0.5}
+          />
+        )}
+        
+        {moderateDepletionAge && (
+          <ReferenceLine
+            x={moderateDepletionAge}
+            stroke={colors.moderate}
+            strokeDasharray="3 3"
+            strokeOpacity={0.5}
+          />
+        )}
+        
+        {/* If age 75 exists in our data, add reference markers */}
+        {age75Data && (
+          <ReferenceLine
+            x={75}
+            stroke={colors.referenceLines}
+            strokeDasharray="3 3"
+            strokeOpacity={0.4}
+            label={{
+              value: "Age: 75",
+              position: "insideBottomRight",
+              fill: colors.text,
+              fontSize: 11
+            }}
+          />
+        )}
+        
         {/* Strategy lines */}
         <Line
           type="monotone"
           dataKey="conservative"
           stroke={colors.conservative}
-          strokeWidth={2}
+          strokeWidth={2.5}
           dot={false}
           activeDot={{ r: 6 }}
           name="conservative"
@@ -119,7 +162,7 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
           type="monotone"
           dataKey="moderate"
           stroke={colors.moderate}
-          strokeWidth={2}
+          strokeWidth={2.5}
           dot={false}
           activeDot={{ r: 6 }}
           name="moderate"
@@ -129,7 +172,7 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
           type="monotone"
           dataKey="aggressive"
           stroke={colors.aggressive}
-          strokeWidth={2}
+          strokeWidth={2.5}
           dot={false}
           activeDot={{ r: 6 }}
           name="aggressive"

@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import WithdrawalStrategyChart from "../charts/WithdrawalStrategyChart";
 import { RetirementPlan } from "@/lib/calculator/types";
 import { Badge } from "@/components/ui/badge";
-import { Info } from "lucide-react";
+import { Info, AlertTriangle } from "lucide-react";
 import { formatSummaryValue } from "../utils/formatters";
+import { findDepletionAge } from "../charts/utils/chartFormatters";
 
 interface WithdrawalStrategyTabProps {
   plan: RetirementPlan;
@@ -21,6 +22,19 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
     moderate: retirementData.moderate * 0.04,
     aggressive: retirementData.aggressive * 0.05
   } : { conservative: 0, moderate: 0, aggressive: 0 };
+
+  // Find depletion ages for each strategy
+  const aggressiveDepletionAge = findDepletionAge(plan.withdrawalStrategyData, 'aggressive');
+  const moderateDepletionAge = findDepletionAge(plan.withdrawalStrategyData, 'moderate');
+  const conservativeDepletionAge = findDepletionAge(plan.withdrawalStrategyData, 'conservative');
+
+  // Find retirement age
+  const retirementAge = retirementData?.age || 65;
+  
+  // Calculate portfolio longevity in years for each strategy
+  const aggressiveLongevity = aggressiveDepletionAge ? aggressiveDepletionAge - retirementAge : 30+;
+  const moderateLongevity = moderateDepletionAge ? moderateDepletionAge - retirementAge : 30+;
+  const conservativeLongevity = conservativeDepletionAge ? conservativeDepletionAge - retirementAge : 30+;
 
   return (
     <div className="space-y-6">
@@ -61,6 +75,14 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
               <p className="text-sm text-muted-foreground">
                 Lower withdrawal rate for longer-lasting portfolio with less spending power.
               </p>
+              <div className="mt-2 pt-2 border-t border-border">
+                <p className="text-sm font-medium flex items-center">
+                  Estimated portfolio longevity: 
+                  <span className="ml-1 font-bold text-green-600">
+                    {conservativeDepletionAge ? `${conservativeLongevity} years` : "30+ years"}
+                  </span>
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -81,6 +103,14 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
               <p className="text-sm text-muted-foreground">
                 Traditional "4% rule" balancing longevity and spending needs.
               </p>
+              <div className="mt-2 pt-2 border-t border-border">
+                <p className="text-sm font-medium flex items-center">
+                  Estimated portfolio longevity: 
+                  <span className="ml-1 font-bold text-amber-600">
+                    {moderateDepletionAge ? `${moderateLongevity} years` : "30+ years"}
+                  </span>
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -101,10 +131,36 @@ const WithdrawalStrategyTab = ({ plan }: WithdrawalStrategyTabProps) => {
               <p className="text-sm text-muted-foreground">
                 Higher withdrawal rate for more spending power but shorter portfolio lifespan.
               </p>
+              <div className="mt-2 pt-2 border-t border-border">
+                <p className="text-sm font-medium flex items-center">
+                  {aggressiveDepletionAge && aggressiveLongevity < 20 && (
+                    <AlertTriangle size={14} className="mr-1 text-red-500" />
+                  )}
+                  Estimated portfolio longevity: 
+                  <span className="ml-1 font-bold text-red-600">
+                    {aggressiveDepletionAge ? `${aggressiveLongevity} years` : "30+ years"}
+                  </span>
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <Card className="bg-muted/50">
+        <CardContent className="pt-6">
+          <div className="text-sm space-y-2">
+            <h4 className="font-medium">About Withdrawal Strategies</h4>
+            <p>These projections show how different withdrawal rates affect your retirement portfolio over time:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Conservative (3%)</strong>: Prioritizes portfolio longevity over spending power.</li>
+              <li><strong>Moderate (4%)</strong>: The traditional "4% rule" offering balance between spending and longevity.</li>
+              <li><strong>Aggressive (5%)</strong>: Provides more spending power at the cost of potentially shorter portfolio lifespan.</li>
+            </ul>
+            <p className="mt-2">All projections account for inflation, meaning your purchasing power should remain consistent over time despite rising prices.</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

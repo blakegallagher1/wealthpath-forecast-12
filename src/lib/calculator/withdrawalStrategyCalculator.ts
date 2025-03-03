@@ -21,12 +21,13 @@ export function generateWithdrawalStrategyData(inputs: CalculatorInputs): Withdr
   const inflationRate = (inputs.inflationRate || 2.5) / 100;
   
   // Project savings to retirement with compound growth
+  // Using Future Value formula: FV = P(1+r)^n + PMT[(1+r)^n-1]/r
   for (let i = 0; i < yearsToRetirement; i++) {
     estimatedRetirementSavings = estimatedRetirementSavings * (1 + returnRate) + annualContributions;
   }
   
   // Set a reasonable cap on retirement savings based on contributions and time
-  const maxReasonableSavings = Math.max(5000000, annualContributions * yearsToRetirement * 10);
+  const maxReasonableSavings = Math.max(10000000, annualContributions * yearsToRetirement * 15);
   estimatedRetirementSavings = Math.min(estimatedRetirementSavings, maxReasonableSavings);
   
   // Define withdrawal rates for different strategies
@@ -34,11 +35,24 @@ export function generateWithdrawalStrategyData(inputs: CalculatorInputs): Withdr
   const moderateRate = 0.04;     // 4% traditional rate
   const aggressiveRate = 0.05;   // 5% withdrawal 
   
-  // Portfolio returns during retirement (typically more conservative)
+  // Portfolio asset allocation for each strategy
+  const portfolioAllocations = {
+    conservative: { stocks: 0.40, bonds: 0.55, cash: 0.05 }, // Lower volatility
+    moderate: { stocks: 0.60, bonds: 0.35, cash: 0.05 },    // Balanced
+    aggressive: { stocks: 0.80, bonds: 0.15, cash: 0.05 }   // Higher volatility
+  };
+  
+  // Portfolio returns during retirement (based on allocation)
   const postRetirementReturns = {
-    conservative: Math.max(returnRate - 0.01, 0.02), // More conservative allocation
-    moderate: returnRate - 0.005,                    // Slightly more conservative 
-    aggressive: returnRate                           // Maintain pre-retirement allocation
+    conservative: portfolioAllocations.conservative.stocks * returnRate + 
+                  portfolioAllocations.conservative.bonds * (returnRate * 0.4) +
+                  portfolioAllocations.conservative.cash * 0.01,
+    moderate: portfolioAllocations.moderate.stocks * returnRate +
+             portfolioAllocations.moderate.bonds * (returnRate * 0.4) +
+             portfolioAllocations.moderate.cash * 0.01,
+    aggressive: portfolioAllocations.aggressive.stocks * returnRate +
+               portfolioAllocations.aggressive.bonds * (returnRate * 0.4) +
+               portfolioAllocations.aggressive.cash * 0.01
   };
   
   // Initialize account balances for each strategy
@@ -61,28 +75,37 @@ export function generateWithdrawalStrategyData(inputs: CalculatorInputs): Withdr
       const yearsSinceRetirement = age - retirementAge;
       const inflationMultiplier = Math.pow(1 + inflationRate, yearsSinceRetirement);
       
-      // Conservative strategy (3%)
-      const conservativeWithdrawal = conservativeBalance * conservativeRate * inflationMultiplier;
+      // Calculate inflation-adjusted withdrawal amounts (fixed percentage of initial balance)
+      const initialConservativeWithdrawal = estimatedRetirementSavings * conservativeRate;
+      const initialModerateWithdrawal = estimatedRetirementSavings * moderateRate;
+      const initialAggressiveWithdrawal = estimatedRetirementSavings * aggressiveRate;
+      
+      // Adjust withdrawals for inflation
+      const conservativeWithdrawal = initialConservativeWithdrawal * inflationMultiplier;
+      const moderateWithdrawal = initialModerateWithdrawal * inflationMultiplier;
+      const aggressiveWithdrawal = initialAggressiveWithdrawal * inflationMultiplier;
+      
+      // Apply withdrawals and returns to each strategy
       conservativeBalance = Math.max(0, (conservativeBalance - conservativeWithdrawal) * 
-                                  (1 + postRetirementReturns.conservative));
+                                    (1 + postRetirementReturns.conservative));
       
-      // Moderate strategy (4%)
-      const moderateWithdrawal = moderateBalance * moderateRate * inflationMultiplier;
       moderateBalance = Math.max(0, (moderateBalance - moderateWithdrawal) * 
-                              (1 + postRetirementReturns.moderate));
+                                (1 + postRetirementReturns.moderate));
       
-      // Aggressive strategy (5%)
-      const aggressiveWithdrawal = aggressiveBalance * aggressiveRate * inflationMultiplier;
       aggressiveBalance = Math.max(0, (aggressiveBalance - aggressiveWithdrawal) * 
-                                (1 + postRetirementReturns.aggressive));
+                                  (1 + postRetirementReturns.aggressive));
       
       // Apply sequence of returns risk factor in early retirement
       if (yearsSinceRetirement <= 5) {
         // Early retirement years are more vulnerable to market downturns
-        const sequenceRiskFactor = 0.99; // Small penalty to simulate sequence risk
-        conservativeBalance *= sequenceRiskFactor;
-        moderateBalance *= sequenceRiskFactor;
-        aggressiveBalance *= sequenceRiskFactor;
+        // Different risk impact based on allocation (more stocks = more sequence risk)
+        const conservativeRiskFactor = 0.990 + (Math.random() * 0.02); // Less volatile
+        const moderateRiskFactor = 0.980 + (Math.random() * 0.04);     // Moderate volatility
+        const aggressiveRiskFactor = 0.970 + (Math.random() * 0.06);   // More volatile
+        
+        conservativeBalance *= conservativeRiskFactor;
+        moderateBalance *= moderateRiskFactor;
+        aggressiveBalance *= aggressiveRiskFactor;
       }
     }
     
