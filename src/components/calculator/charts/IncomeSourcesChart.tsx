@@ -12,6 +12,16 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
+  // Filter out any data points with invalid values to prevent chart errors
+  const validData = useMemo(() => {
+    return data.filter(point => {
+      // Ensure all numeric values are actually numbers
+      return !Object.values(point).some(val => 
+        typeof val === 'number' && (isNaN(val) || !isFinite(val))
+      );
+    });
+  }, [data]);
+
   const colors = useMemo(() => ({
     primaryIncome: "#3b82f6",  // Blue for primary income
     spouseIncome: "#6366f1",   // Indigo for spouse income
@@ -26,10 +36,10 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
   }), [isDark]);
 
   // Find retirement age in data for reference line
-  const retirementAge = data.find(d => d.isRetirementAge)?.age;
+  const retirementAge = validData.find(d => d.isRetirementAge)?.age;
   
   // Find Social Security start age if it exists in the data
-  const ssStartAge = data.findIndex(d => d.socialSecurity > 0)?.toString();
+  const ssStartAge = validData.findIndex(d => (d.socialSecurity || 0) > 0);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -43,7 +53,7 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart
-        data={data}
+        data={validData}
         margin={{
           top: 10,
           right: 30,

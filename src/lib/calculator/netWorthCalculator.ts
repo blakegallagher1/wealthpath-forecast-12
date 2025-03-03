@@ -22,5 +22,11 @@ export const calculateNetWorthProjection = (
     lifeEventImpact = 0;
   }
   
-  return calculateNetWorthProjectionImpl(inputs, lifeEventImpact);
+  try {
+    return calculateNetWorthProjectionImpl(inputs, lifeEventImpact);
+  } catch (error) {
+    console.error("Error calculating net worth projection:", error);
+    // Return empty array instead of throwing to prevent app crash
+    return [];
+  }
 };
