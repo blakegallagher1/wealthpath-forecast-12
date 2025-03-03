@@ -1,6 +1,6 @@
 
 import { useMemo } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from "recharts";
 import { useTheme } from "@/hooks/use-theme";
 import { RiskProfileDataPoint } from "@/lib/calculator/types";
 
@@ -28,6 +28,9 @@ const RiskProfileChart = ({ data }: RiskProfileChartProps) => {
       maximumFractionDigits: 1,
     }).format(value);
   };
+
+  // Find retirement age for reference line
+  const retirementAge = data.find(d => d.isRetirementAge)?.age;
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -91,6 +94,16 @@ const RiskProfileChart = ({ data }: RiskProfileChartProps) => {
           activeDot={{ r: 6 }}
           name="Aggressive (High Risk)"
         />
+        
+        {retirementAge && (
+          <ReferenceLine
+            x={retirementAge}
+            stroke="#0891b2"
+            strokeWidth={1.5}
+            strokeDasharray="5 5"
+            label={{ value: 'Retirement', position: 'insideTopRight', fontSize: 11, fill: '#0891b2' }}
+          />
+        )}
       </LineChart>
     </ResponsiveContainer>
   );

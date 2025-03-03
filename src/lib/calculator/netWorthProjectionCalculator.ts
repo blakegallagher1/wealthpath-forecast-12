@@ -1,4 +1,3 @@
-
 import { CalculatorInputs, NetWorthDataPoint } from "./types";
 import { calculateLifeEventsImpact } from "./netWorthLifeEventsCalculator";
 import { calculateInvestmentGrowth } from "./netWorthInvestmentCalculator";
@@ -47,11 +46,20 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
   
   let annualMortgagePayment = monthlyMortgagePayment * 12;
   
-  // Calculate real estate appreciation rate (default 3% if not specified)
-  const realEstateAppreciationRate = 0.03; // 3% annual appreciation
+  // Real estate market cycle and volatility
+  let realEstateMarketCycle = 0; // 0 = neutral, positive = bull, negative = bear
+  let realEstateCycleLength = 0;
+  const maxRealEstateCycleLength = 8; // Real estate cycles tend to be longer than stock market cycles
+  
+  // Base real estate appreciation rate (default 3% if not specified)
+  const baseRealEstateAppreciationRate = 0.03; // 3% annual appreciation
+  const realEstateVolatility = 0.03; // Lower volatility than stocks
   
   // Keep track of home value separate from equity
   let homeValue = realEstateEquity + mortgageBalance;
+  
+  // Initialize market cycle for investments
+  let marketCycle = 0; // 0 = neutral, positive = bull, negative = bear
   
   for (let year = 0; year < projectionYears; year++) {
     const projectedYear = currentYear + year;
@@ -90,6 +98,25 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
       }
     }
     
+    // Update real estate market cycle
+    if (realEstateCycleLength <= 0) {
+      // Generate a new real estate market cycle
+      realEstateMarketCycle = (Math.random() - 0.5) * 2; // Between -1 and 1
+      realEstateCycleLength = Math.floor(Math.random() * maxRealEstateCycleLength) + 3; // Minimum 3 years
+    } else {
+      realEstateCycleLength--;
+      // More gradual changes in real estate
+      realEstateMarketCycle *= 0.9;
+    }
+    
+    // Generate real estate return with volatility and market cycle effects
+    // Box-Muller transform for normal distribution
+    const u1 = Math.random();
+    const u2 = Math.random();
+    const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    const cycleFactor = 1 + realEstateMarketCycle * 0.3; // ±30% adjustment based on cycle
+    const realEstateReturn = Math.max(-0.15, (baseRealEstateAppreciationRate + realEstateVolatility * z) * cycleFactor);
+    
     // Update investment accounts based on whether retired or not
     const investmentUpdates = calculateInvestmentGrowth(
       age, 
@@ -98,16 +125,18 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
       rothAccounts, 
       taxableInvestments, 
       cashSavings,
-      annualSavings
+      annualSavings,
+      marketCycle
     );
     
     retirementAccounts = investmentUpdates.retirementAccounts;
     rothAccounts = investmentUpdates.rothAccounts;
     taxableInvestments = investmentUpdates.taxableInvestments;
     cashSavings = investmentUpdates.cashSavings;
+    marketCycle = investmentUpdates.marketCycle;
     
-    // Real estate appreciation
-    homeValue *= (1 + realEstateAppreciationRate);
+    // Real estate appreciation with market cycle effects
+    homeValue *= (1 + realEstateReturn);
     
     // Mortgage amortization calculation
     if (mortgageBalance > 0) {
@@ -127,12 +156,13 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
       realEstateEquity = homeValue;
     }
     
-    // Reduce other debts
-    otherDebts = Math.max(0, otherDebts * 0.8); // Simple assumption: 20% of other debt paid off each year
+    // Reduce other debts - add some randomness to debt payoff rate
+    const debtPayoffRate = 0.15 + Math.random() * 0.1; // Between 15-25% per year
+    otherDebts = Math.max(0, otherDebts * (1 - debtPayoffRate));
     
     // Age increases with each year
     age++;
   }
   
   return data;
-};
+}
