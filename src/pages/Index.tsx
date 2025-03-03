@@ -1,9 +1,10 @@
+
 import { Button } from "@/components/ui/button";
 import Calculator from "@/components/calculator/Calculator";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useNavigate } from "react-router-dom";
-import { LockKeyhole, Database } from "lucide-react";
+import { BarChart3, Database } from "lucide-react";
 import { useState } from "react";
 import { calculatorDefaults } from "@/lib/calculator/defaults";
 import { CalculatorInputs } from "@/lib/calculator/types";
@@ -78,11 +79,11 @@ const Index = () => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => navigate("/advisor/login")}
+            onClick={() => navigate("/advisor/dashboard")}
             className="flex items-center gap-1"
           >
-            <LockKeyhole className="h-4 w-4" />
-            Advisor Login
+            <BarChart3 className="h-4 w-4" />
+            Advisor Dashboard
           </Button>
         </div>
         <Calculator initialInputs={calculatorInputs} />

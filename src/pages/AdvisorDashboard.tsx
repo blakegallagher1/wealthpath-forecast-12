@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
 import AdvisorHeader from "@/components/advisor/AdvisorHeader";
 import ClientList from "@/components/advisor/ClientList";
@@ -36,20 +34,12 @@ const AdvisorDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if advisor is logged in
-    const isLoggedIn = localStorage.getItem("advisorLoggedIn") === "true";
-    
-    if (!isLoggedIn) {
-      navigate("/advisor/login");
-      return;
-    }
-
-    // Load mock data
+    // Load mock data without checking login state
     setTimeout(() => {
       setClients(generateMockClients(15));
       setIsLoading(false);
     }, 1000);
-  }, [navigate]);
+  }, []);
 
   const filteredClients = clients.filter(client => {
     // Filter by search query
@@ -70,13 +60,7 @@ const AdvisorDashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("advisorLoggedIn");
-    localStorage.removeItem("advisorName");
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
-    navigate("/advisor/login");
+    navigate("/");
   };
 
   return (
@@ -92,7 +76,7 @@ const AdvisorDashboard = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold">Advisor Dashboard</h1>
-              <p className="text-neutral-500 mt-1">Manage your clients and their retirement plans</p>
+              <p className="text-neutral-500 mt-1">Manage clients and their retirement plans</p>
             </div>
             <div className="mt-4 md:mt-0">
               <Button onClick={() => navigate("/")}>
@@ -109,7 +93,7 @@ const AdvisorDashboard = () => {
             <CardHeader>
               <CardTitle>Recent Client Activity</CardTitle>
               <CardDescription>
-                Overview of your clients and their retirement plans
+                Overview of clients and their retirement plans
               </CardDescription>
             </CardHeader>
             <CardContent>

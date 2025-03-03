@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,15 +26,6 @@ const ClientDetail = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if advisor is logged in
-    const isLoggedIn = localStorage.getItem("advisorLoggedIn") === "true";
-    
-    if (!isLoggedIn) {
-      navigate("/advisor/login");
-      return;
-    }
-
-    // Load mock data
     setTimeout(() => {
       const mockClients = generateMockClients(15);
       const selectedClient = mockClients.find(c => c.id === clientId) || mockClients[0];
@@ -43,12 +33,10 @@ const ClientDetail = () => {
       setClientData(generateClientData(selectedClient));
       setIsLoading(false);
     }, 1000);
-  }, [clientId, navigate]);
+  }, [clientId]);
 
   const handleLogout = () => {
-    localStorage.removeItem("advisorLoggedIn");
-    localStorage.removeItem("advisorName");
-    navigate("/advisor/login");
+    navigate("/");
   };
 
   const handleBackClick = () => {
