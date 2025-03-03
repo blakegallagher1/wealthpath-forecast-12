@@ -61,7 +61,7 @@ export const calculatorDefaults: CalculatorInputs = {
   retirementWithdrawalRate: 4.0,
   lifeExpectancy: 90,
   
-  // Ensure Social Security fields are properly initialized
+  // Social Security fields
   socialSecurityBenefit: 0,
   spouseSocialSecurityBenefit: 0,
 };
