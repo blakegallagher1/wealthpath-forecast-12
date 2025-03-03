@@ -38,6 +38,20 @@ const Index = () => {
       taxableInvestments: 3000,
       realEstateEquity: 0,
       annual401kContribution: 0,
+      
+      // Set debt balances to zero
+      mortgageBalance: 0,
+      autoLoanBalance: 0,
+      creditCardBalance: 0,
+      
+      // Add life events
+      planningWedding: true,
+      weddingYear: 2028,
+      weddingCost: 25000,
+      
+      planningHomePurchase: true,
+      homePurchaseYear: 2030,
+      homeDownPayment: 75000,
     };
     
     setCalculatorInputs(testData);
