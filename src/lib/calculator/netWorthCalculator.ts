@@ -1,5 +1,5 @@
 
-import { calculateNetWorthProjection as calculateNetWorthProjectionImpl } from "./netWorthProjectionCalculator";
+import { calculateNetWorthProjection as calculateNetWorthProjectionImpl } from "./projections/netWorthProjection";
 import { CalculatorInputs, NetWorthDataPoint } from "./types";
 
 /**
