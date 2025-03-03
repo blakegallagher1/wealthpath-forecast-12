@@ -10,6 +10,7 @@ import NetWorthTab from "./tabs/NetWorthTab";
 import IncomeSourcesTab from "./tabs/IncomeSourcesTab";
 import WithdrawalStrategyTab from "./tabs/WithdrawalStrategyTab";
 import RiskProfileTab from "./tabs/RiskProfileTab";
+import DebtPayoffTab from "./tabs/DebtPayoffTab";
 import { formatCurrency } from "@/lib/calculator/formatters";
 
 interface ResultsProps {
@@ -37,12 +38,13 @@ const Results = ({ plan, inputs, onRecalculate }: ResultsProps) => {
       </motion.div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 h-12">
+        <TabsList className="grid grid-cols-2 md:grid-cols-6 h-12">
           <TabsTrigger value="summary" className="text-xs md:text-sm">Summary</TabsTrigger>
           <TabsTrigger value="networth" className="text-xs md:text-sm">Net Worth</TabsTrigger>
           <TabsTrigger value="income" className="text-xs md:text-sm">Income Sources</TabsTrigger>
           <TabsTrigger value="withdrawal" className="text-xs md:text-sm">Withdrawal Strategy</TabsTrigger>
           <TabsTrigger value="risk" className="text-xs md:text-sm">Risk Analysis</TabsTrigger>
+          <TabsTrigger value="debt" className="text-xs md:text-sm">Debt Payoff</TabsTrigger>
         </TabsList>
 
         <div className="mt-6">
@@ -71,6 +73,10 @@ const Results = ({ plan, inputs, onRecalculate }: ResultsProps) => {
 
             <TabsContent value="risk" className="mt-0">
               <RiskProfileTab plan={plan} />
+            </TabsContent>
+
+            <TabsContent value="debt" className="mt-0">
+              <DebtPayoffTab plan={plan} />
             </TabsContent>
           </motion.div>
         </div>

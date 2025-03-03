@@ -1,4 +1,3 @@
-
 export interface CalculatorInputs {
   // Personal details
   name: string;
@@ -110,6 +109,17 @@ export interface RiskProfileDataPoint {
   isRetirementAge?: boolean;
 }
 
+export interface DebtPayoffDataPoint {
+  age: number;
+  year?: number;
+  mortgageBalance: number;
+  studentLoanBalance: number;
+  autoLoanBalance: number;
+  creditCardBalance: number;
+  totalDebt: number;
+  isRetirementAge?: boolean;
+}
+
 export interface RetirementPlan {
   // Summary metrics
   totalRetirementSavings: number;
@@ -124,6 +134,7 @@ export interface RetirementPlan {
   withdrawalStrategyData: WithdrawalStrategyDataPoint[];
   riskProfileData: RiskProfileDataPoint[];
   socialSecurityData: SocialSecurityDataPoint[];
+  debtPayoffData: DebtPayoffDataPoint[];
   
   // Recommendations
   recommendations: string[];
