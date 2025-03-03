@@ -1,6 +1,14 @@
 import { CalculatorInputs, NetWorthDataPoint } from "./types";
 import { calculateLifeEventsImpact } from "./netWorthLifeEventsCalculator";
-import { calculateInvestmentGrowth } from "./netWorthInvestmentCalculator";
+import { 
+  updateRealEstateCycle, 
+  calculateRealEstateReturn 
+} from "./utils/marketCycleUtils";
+import { 
+  calculateMonthlyMortgagePayment, 
+  processMortgagePayment 
+} from "./utils/mortgageUtils";
+import { calculateInvestmentGrowth } from "./utils/investmentAccountUtils";
 
 /**
  * Calculates the projected net worth over time based on user inputs
@@ -28,28 +36,22 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
   let annualSavings = ((inputs.annualIncome || 0) + (inputs.spouseIncome || 0) + (inputs.annualBonusAmount || 0)) - annualExpenses - 
                       (inputs.annual401kContribution || 0) - (inputs.annualRothContribution || 0) - (inputs.annualTaxableContribution || 0);
   
-  // Calculate mortgage payment using amortization formula
+  // Calculate mortgage payment
   const mortgageRate = (inputs.mortgageInterestRate || 0) / 100;
   const mortgageYearsRemaining = 30; // Standard 30-year mortgage
-  const monthlyRate = mortgageRate / 12;
-  const numberOfPayments = mortgageYearsRemaining * 12;
   
-  // Calculate monthly mortgage payment using the amortization formula
-  // P = L[c(1 + c)^n]/[(1 + c)^n - 1]
-  // where P = payment, L = loan amount, c = monthly interest rate, n = number of payments
-  let monthlyMortgagePayment = 0;
-  if (mortgageBalance > 0 && mortgageRate > 0) {
-    monthlyMortgagePayment = mortgageBalance * 
-                            (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
-                            (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
-  }
+  // Calculate monthly mortgage payment
+  const monthlyMortgagePayment = calculateMonthlyMortgagePayment(
+    mortgageBalance, 
+    mortgageRate, 
+    mortgageYearsRemaining
+  );
   
   let annualMortgagePayment = monthlyMortgagePayment * 12;
   
   // Real estate market cycle and volatility
   let realEstateMarketCycle = 0; // 0 = neutral, positive = bull, negative = bear
   let realEstateCycleLength = 0;
-  const maxRealEstateCycleLength = 8; // Real estate cycles tend to be longer than stock market cycles
   
   // Base real estate appreciation rate (default 3% if not specified)
   const baseRealEstateAppreciationRate = inputs.realEstateAppreciationRate ? inputs.realEstateAppreciationRate / 100 : 0.03;
@@ -93,36 +95,25 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
       realEstateEquity = newEquity;
       
       // Recalculate mortgage payment with new balance
-      if (mortgageBalance > 0 && mortgageRate > 0) {
-        monthlyMortgagePayment = mortgageBalance * 
-                                (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
-                                (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
-        annualMortgagePayment = monthlyMortgagePayment * 12;
-      }
+      const newMonthlyPayment = calculateMonthlyMortgagePayment(
+        mortgageBalance, 
+        mortgageRate, 
+        mortgageYearsRemaining
+      );
+      annualMortgagePayment = newMonthlyPayment * 12;
     }
     
     // Update real estate market cycle
-    if (realEstateCycleLength <= 0) {
-      // Generate a new real estate market cycle
-      realEstateMarketCycle = (Math.random() - 0.5) * 2; // Between -1 and 1
-      realEstateCycleLength = Math.floor(Math.random() * maxRealEstateCycleLength) + 3; // Minimum 3 years
-    } else {
-      realEstateCycleLength--;
-      // More gradual changes in real estate
-      realEstateMarketCycle *= 0.9;
-    }
+    const realEstateCycleUpdate = updateRealEstateCycle(realEstateMarketCycle, realEstateCycleLength);
+    realEstateMarketCycle = realEstateCycleUpdate.cycle;
+    realEstateCycleLength = realEstateCycleUpdate.length;
     
-    // Generate real estate return with volatility and market cycle effects
-    // Box-Muller transform for normal distribution
-    const u1 = Math.random();
-    const u2 = Math.random();
-    const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-    const cycleFactor = 1 + realEstateMarketCycle * 0.3; // ±30% adjustment based on cycle
-    
-    // The real estate return should be more conservative and less volatile
-    // We'll cap it between -5% and +15% after all adjustments
-    const rawRealEstateReturn = (baseRealEstateAppreciationRate + realEstateVolatility * z) * cycleFactor;
-    const realEstateReturn = Math.min(0.15, Math.max(-0.05, rawRealEstateReturn));
+    // Generate real estate return with market cycle effects
+    const realEstateReturn = calculateRealEstateReturn(
+      baseRealEstateAppreciationRate,
+      realEstateVolatility,
+      realEstateMarketCycle
+    );
     
     // Special handling for retirement transition (1 year before and after retirement)
     const isNearRetirement = Math.abs(age - inputs.retirementAge) <= 1;
@@ -185,14 +176,11 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
       
       // Mortgage amortization calculation
       if (mortgageBalance > 0) {
-        // Calculate interest portion of payment
-        const annualInterest = mortgageBalance * mortgageRate;
-        
-        // Calculate principal portion of payment
-        const principalPayment = Math.min(annualMortgagePayment - annualInterest, mortgageBalance);
-        
-        // Update mortgage balance
-        mortgageBalance = Math.max(0, mortgageBalance - principalPayment);
+        mortgageBalance = processMortgagePayment(
+          mortgageBalance,
+          mortgageRate,
+          annualMortgagePayment
+        );
         
         // Update real estate equity based on new home value and mortgage balance
         realEstateEquity = homeValue - mortgageBalance;
