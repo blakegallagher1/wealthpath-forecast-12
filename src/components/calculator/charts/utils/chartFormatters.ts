@@ -1,3 +1,4 @@
+
 import { WithdrawalStrategyDataPoint } from "@/lib/calculator/types";
 
 /**
@@ -50,24 +51,4 @@ export const formatCurrencyForTooltip = (value: number): string => {
   } else {
     return `$${value.toFixed(0)}`;
   }
-};
-
-// New responsive utilities
-export const getResponsiveContainerProps = (isMobile: boolean) => {
-  return {
-    width: "100%",
-    height: "100%",
-    margin: isMobile ? 
-      { top: 10, right: 5, left: 5, bottom: 20 } : 
-      { top: 20, right: 30, left: 20, bottom: 30 }
-  };
-};
-
-export const getResponsiveAxisProps = (isMobile: boolean) => {
-  return {
-    fontSize: isMobile ? 10 : 12,
-    tickMargin: isMobile ? 3 : 5,
-    height: isMobile ? 25 : 30,
-    width: isMobile ? 50 : 70,
-  };
 };
