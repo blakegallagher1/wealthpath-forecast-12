@@ -23,12 +23,14 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
 
   // Normalize data to prevent unrealistic projections
   const normalizedData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    
     return data.map(point => {
       // Apply reasonable caps to each asset type
-      const normalizedCash = Math.min(point.cash, 1000000); // Cap cash at $1M
-      const normalizedRetirement = Math.min(point.retirement, 10000000); // Cap retirement at $10M
-      const normalizedTaxable = Math.min(point.taxable, 5000000); // Cap taxable at $5M
-      const normalizedRealEstate = Math.min(point.realEstate, 8000000); // Cap real estate at $8M
+      const normalizedCash = Math.min(point.cash || 0, 1000000); // Cap cash at $1M
+      const normalizedRetirement = Math.min(point.retirement || 0, 10000000); // Cap retirement at $10M
+      const normalizedTaxable = Math.min(point.taxable || 0, 5000000); // Cap taxable at $5M
+      const normalizedRealEstate = Math.min(point.realEstate || 0, 8000000); // Cap real estate at $8M
       
       // Recalculate total with normalized values
       const normalizedTotal = normalizedCash + normalizedRetirement + normalizedTaxable + normalizedRealEstate;
@@ -55,6 +57,10 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
 
   // Find the retirement age point for reference line
   const retirementPoint = normalizedData.find(point => point.isRetirementAge);
+
+  if (!normalizedData || normalizedData.length === 0) {
+    return <div className="flex items-center justify-center h-full">No data available</div>;
+  }
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -131,11 +137,12 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
             stroke="#0891b2"
             strokeWidth={1.5}
             strokeDasharray="5 5"
-            label={{ 
-              value: 'Retirement', 
-              position: 'insideTopRight', 
-              fontSize: 11, 
-              fill: '#0891b2' 
+            label={{
+              value: 'Retirement',
+              position: 'insideTopRight',
+              fontSize: 11,
+              fill: '#0891b2',
+              offset: 5
             }}
           />
         )}

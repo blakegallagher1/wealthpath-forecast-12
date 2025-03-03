@@ -9,6 +9,9 @@ interface NetWorthTabProps {
 }
 
 const NetWorthTab = ({ plan }: NetWorthTabProps) => {
+  // Ensure we have valid data
+  const hasData = plan && plan.netWorthData && plan.netWorthData.length > 0;
+
   return (
     <Card>
       <CardHeader>
@@ -18,7 +21,13 @@ const NetWorthTab = ({ plan }: NetWorthTabProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="h-80">
-        <NetWorthChart data={plan.netWorthData} />
+        {hasData ? (
+          <NetWorthChart data={plan.netWorthData} />
+        ) : (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            No projection data available
+          </div>
+        )}
       </CardContent>
     </Card>
   );
