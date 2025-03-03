@@ -77,7 +77,7 @@ const DebtPayoffTab = ({ plan }: DebtPayoffTabProps) => {
             Track your journey to becoming debt-free over time
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-80">
+        <CardContent className="h-96">
           <DebtPayoffChart data={plan.debtPayoffData} />
         </CardContent>
       </Card>

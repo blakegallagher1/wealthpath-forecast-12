@@ -34,7 +34,7 @@ const SocialSecurityChart = ({ data }: SocialSecurityChartProps) => {
           top: 20,
           right: 30,
           left: 20,
-          bottom: 5,
+          bottom: 30,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
@@ -44,6 +44,7 @@ const SocialSecurityChart = ({ data }: SocialSecurityChartProps) => {
           tickLine={{ stroke: colors.grid }}
           tick={{ fill: colors.text, fontSize: 12 }}
           label={{ value: "Claiming Age", position: "insideBottom", offset: -5, fill: colors.text }}
+          height={50}
         />
         <YAxis 
           tickFormatter={formatCurrency}
@@ -51,6 +52,7 @@ const SocialSecurityChart = ({ data }: SocialSecurityChartProps) => {
           tickLine={{ stroke: colors.grid }}
           tick={{ fill: colors.text, fontSize: 12 }}
           label={{ value: "Monthly Benefit", angle: -90, position: "insideLeft", style: { textAnchor: "middle" }, fill: colors.text }}
+          width={80}
         />
         <Tooltip
           formatter={(value: number) => [formatCurrency(value), "Monthly Benefit"]}
@@ -62,7 +64,7 @@ const SocialSecurityChart = ({ data }: SocialSecurityChartProps) => {
             color: colors.text,
           }}
         />
-        <Bar dataKey="monthlyBenefit" name="Monthly Benefit">
+        <Bar dataKey="monthlyBenefit" name="Monthly Benefit" barSize={30}>
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={colors.bars[index % colors.bars.length]} />
           ))}

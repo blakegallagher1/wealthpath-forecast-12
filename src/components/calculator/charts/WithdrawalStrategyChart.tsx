@@ -48,18 +48,26 @@ const WithdrawalStrategyChart = ({ data }: WithdrawalStrategyChartProps) => {
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
         data={data}
-        margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+        margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
       >
         <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
         <XAxis 
           dataKey="age" 
           tick={{ fontSize: 12 }} 
           tickMargin={5}
-          label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
+          height={30}
+          padding={{ left: 10, right: 10 }}
+          allowDataOverflow={false}
+          label={{ 
+            value: 'Age', 
+            position: 'insideBottom', 
+            offset: -5,
+            fontSize: 12
+          }}
         />
         <YAxis 
           tickFormatter={(value) => `$${value >= 1000000 ? `${(value / 1000000).toFixed(0)}M` : value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value}`}
-          width={60}
+          width={70}
           tick={{ fontSize: 12 }}
         />
         <Tooltip content={<CustomTooltip />} />

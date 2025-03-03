@@ -36,7 +36,7 @@ const DebtPayoffChart = ({ data }: DebtPayoffChartProps) => {
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart
         data={data}
-        margin={{ top: 10, right: 30, left: 10, bottom: 30 }}
+        margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
       >
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
         <XAxis
@@ -44,12 +44,16 @@ const DebtPayoffChart = ({ data }: DebtPayoffChartProps) => {
           tick={{ fontSize: 12 }}
           tickLine={false}
           axisLine={{ stroke: "#e5e5e5" }}
+          height={30}
+          padding={{ left: 10, right: 10 }}
+          allowDataOverflow={false}
         />
         <YAxis
           tick={{ fontSize: 12 }}
           tickLine={false}
           axisLine={{ stroke: "#e5e5e5" }}
           tickFormatter={(value) => formatCurrency(value)}
+          width={70}
         />
         <Tooltip
           formatter={(value: number, name: string) => [
@@ -63,7 +67,9 @@ const DebtPayoffChart = ({ data }: DebtPayoffChartProps) => {
           labelFormatter={(age) => `Age: ${age}`}
         />
         <Legend 
-          wrapperStyle={{ paddingTop: 10 }}
+          wrapperStyle={{ paddingTop: 10, fontSize: "12px" }}
+          verticalAlign="bottom"
+          height={36}
           formatter={(value) => 
             value === "totalDebt" ? "Total Debt" :
             value === "mortgageBalance" ? "Mortgage" :

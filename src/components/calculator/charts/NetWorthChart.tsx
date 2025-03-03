@@ -67,10 +67,10 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
       <AreaChart
         data={normalizedData}
         margin={{
-          top: 10,
+          top: 20,
           right: 30,
-          left: 0,
-          bottom: 0,
+          left: 20,
+          bottom: 30,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
@@ -79,6 +79,9 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
           tick={{ fill: colors.text, fontSize: 12 }}
+          height={30}
+          padding={{ left: 10, right: 10 }}
+          allowDataOverflow={false}
         />
         <YAxis 
           tickFormatter={formatCurrency}
@@ -86,6 +89,7 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
           tickLine={{ stroke: colors.grid }}
           tick={{ fill: colors.text, fontSize: 12 }}
           domain={[0, 'auto']}
+          width={70}
         />
         <Tooltip
           formatter={(value: number) => [formatCurrency(value), ""]}
@@ -97,7 +101,11 @@ const NetWorthChart = ({ data }: NetWorthChartProps) => {
             color: colors.text,
           }}
         />
-        <Legend wrapperStyle={{ fontSize: "12px" }} />
+        <Legend 
+          wrapperStyle={{ fontSize: "12px", paddingTop: 10 }} 
+          verticalAlign="bottom"
+          height={36}
+        />
         <Area
           type="monotone"
           dataKey="realEstate"

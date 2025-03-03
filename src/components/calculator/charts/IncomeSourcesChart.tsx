@@ -55,10 +55,10 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
       <AreaChart
         data={validData}
         margin={{
-          top: 10,
+          top: 20,
           right: 30,
-          left: 0,
-          bottom: 0,
+          left: 10,
+          bottom: 20,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
@@ -67,12 +67,16 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
           tick={{ fill: colors.text, fontSize: 12 }}
+          height={30}
+          padding={{ left: 10, right: 10 }}
+          allowDataOverflow={false}
         />
         <YAxis 
           tickFormatter={formatCurrency}
           stroke={colors.text}
           tickLine={{ stroke: colors.grid }}
           tick={{ fill: colors.text, fontSize: 12 }}
+          width={60}
         />
         <Tooltip
           formatter={(value: number) => [formatCurrency(value), ""]}
@@ -84,7 +88,11 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
             color: colors.text,
           }}
         />
-        <Legend wrapperStyle={{ fontSize: "12px" }} />
+        <Legend 
+          wrapperStyle={{ fontSize: "12px", paddingTop: 10 }} 
+          verticalAlign="bottom"
+          height={36}
+        />
         <Area
           type="monotone"
           dataKey="primaryIncome"
