@@ -19,19 +19,19 @@ const RiskProfileTab = ({ plan }: RiskProfileTabProps) => {
             Projected portfolio growth under different risk profiles
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-96">
+        <CardContent className="h-[500px]">
           <RiskProfileChart data={plan.riskProfileData} />
         </CardContent>
       </Card>
       
-      <Card className="mt-6">
+      <Card className="mt-8">
         <CardHeader>
           <CardTitle>Social Security Benefits</CardTitle>
           <CardDescription>
             Projected social security benefits at different claiming ages
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-96">
+        <CardContent className="h-[500px]">
           <SocialSecurityChart data={plan.socialSecurityData} />
         </CardContent>
       </Card>
