@@ -1,25 +1,14 @@
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import InputForm from "./InputForm";
-import Results from "./Results";
-import PhoneVerification from "./PhoneVerification";
 import { calculatorDefaults } from "@/lib/calculator/defaults";
 import { calculateRetirementPlan } from "@/lib/calculator/calculations";
 import { CalculatorInputs, RetirementPlan } from "@/lib/calculator/types";
 import { toast } from "@/components/ui/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ExternalLink, FormInput } from "lucide-react";
+import CalculatorContent from "./CalculatorContent";
+import AdvisoryServicesDialog from "./dialogs/AdvisoryServicesDialog";
 
 interface CalculatorProps {
   initialInputs?: CalculatorInputs;
@@ -121,119 +110,27 @@ const Calculator = ({ initialInputs = calculatorDefaults }: CalculatorProps) => 
           <Separator />
           
           <div className="p-6">
-            <AnimatePresence mode="wait">
-              {showVerification ? (
-                <motion.div
-                  key="verification"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3 }}
-                  className="py-4"
-                >
-                  <div className="mb-6">
-                    <h2 className="text-xl font-semibold text-center">One More Step</h2>
-                    <p className="text-center text-neutral-600 mt-2">
-                      Please verify your phone number to calculate your retirement plan.
-                    </p>
-                  </div>
-                  <PhoneVerification onVerify={handleVerify} />
-                  <div className="mt-6 text-center">
-                    <Button variant="link" onClick={handleCancelVerification}>
-                      Return to calculator
-                    </Button>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, x: activeTab === "inputs" ? -20 : 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: activeTab === "inputs" ? 20 : -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <TabsContent value="inputs" className="mt-0">
-                    <div className="pt-4 pb-8">
-                      <Button 
-                        variant="outline"
-                        size="lg"
-                        className="w-full flex items-center justify-center gap-2 h-16 border-2 bg-blue-50 border-blue-200"
-                      >
-                        <FormInput className="h-5 w-5" />
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium">Input Dashboard</span>
-                          <span className="text-xs text-left font-normal">Enter your financial information</span>
-                        </div>
-                      </Button>
-                    </div>
-                    
-                    <InputForm inputs={inputs} onChange={handleInputChange} />
-                    <div className="mt-8 flex justify-end space-x-4">
-                      <Button 
-                        variant="outline" 
-                        onClick={handleReset}
-                        className="px-6"
-                      >
-                        Reset
-                      </Button>
-                      <Button 
-                        onClick={handleCalculate}
-                        className="px-8"
-                      >
-                        Calculate
-                      </Button>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="results" className="mt-0">
-                    {results && (
-                      <Results 
-                        plan={results} 
-                        inputs={inputs} 
-                        onRecalculate={() => setActiveTab("inputs")} 
-                      />
-                    )}
-                  </TabsContent>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <CalculatorContent
+              activeTab={activeTab}
+              inputs={inputs}
+              results={results}
+              showVerification={showVerification}
+              handleInputChange={handleInputChange}
+              handleCalculate={handleCalculate}
+              handleReset={handleReset}
+              handleVerify={handleVerify}
+              handleCancelVerification={handleCancelVerification}
+              setActiveTab={setActiveTab}
+            />
           </div>
         </Tabs>
       </motion.div>
 
       {/* Advisory Services Dialog */}
-      <Dialog open={showAdvisoryDialog} onOpenChange={setShowAdvisoryDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="text-xl text-center">You Qualify for Premium Advisory Services</DialogTitle>
-            <DialogDescription className="text-center pt-2">
-              It seems you have the minimum assets necessary to qualify for the financial advisory services of the Hoffman Private Wealth Group. Would you like to speak with an expert?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col space-y-3 py-4">
-            <p className="text-sm text-muted-foreground text-center">
-              Our wealth management experts can provide personalized guidance to help optimize your retirement strategy and maximize your financial potential.
-            </p>
-          </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-3">
-            <Button
-              variant="outline"
-              className="flex items-center gap-2 w-full"
-              onClick={() => window.open("https://todd-hoffman.stewardpartners.com/", "_blank")}
-            >
-              <ExternalLink className="h-4 w-4" />
-              Learn More
-            </Button>
-            <Button 
-              className="flex items-center gap-2 w-full"
-              onClick={() => window.open("https://calendly.com/andy-hoffman-stewardpartners/15min", "_blank")}
-            >
-              <ExternalLink className="h-4 w-4" />
-              Schedule a Call
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AdvisoryServicesDialog 
+        open={showAdvisoryDialog} 
+        onOpenChange={setShowAdvisoryDialog} 
+      />
     </div>
   );
 };
