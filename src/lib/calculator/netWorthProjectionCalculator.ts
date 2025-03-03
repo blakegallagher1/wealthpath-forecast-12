@@ -1,3 +1,4 @@
+
 import { CalculatorInputs, NetWorthDataPoint } from "./types";
 import { calculateLifeEventsImpact } from "./netWorthLifeEventsCalculator";
 import { calculateInvestmentGrowth } from "./netWorthInvestmentCalculator";
@@ -24,12 +25,12 @@ export const calculateNetWorthProjection = (inputs: CalculatorInputs, lifeEventI
   let otherDebts = inputs.studentLoanBalance + inputs.autoLoanBalance + inputs.creditCardBalance;
   
   // Calculate annual expenses and savings
-  const annualExpenses = (inputs.annualIncome + inputs.spouseIncome) * (inputs.expensePercentOfIncome / 100);
-  let annualSavings = (inputs.annualIncome + inputs.spouseIncome + inputs.annualBonusAmount) - annualExpenses - 
-                      inputs.annual401kContribution - inputs.annualRothContribution - inputs.annualTaxableContribution;
+  const annualExpenses = (inputs.annualIncome + (inputs.spouseIncome || 0)) * ((inputs.expensePercentOfIncome || 70) / 100);
+  let annualSavings = ((inputs.annualIncome || 0) + (inputs.spouseIncome || 0) + (inputs.annualBonusAmount || 0)) - annualExpenses - 
+                      (inputs.annual401kContribution || 0) - (inputs.annualRothContribution || 0) - (inputs.annualTaxableContribution || 0);
   
   // Calculate mortgage payment using amortization formula
-  const mortgageRate = inputs.mortgageInterestRate / 100;
+  const mortgageRate = (inputs.mortgageInterestRate || 0) / 100;
   const mortgageYearsRemaining = 30; // Standard 30-year mortgage
   const monthlyRate = mortgageRate / 12;
   const numberOfPayments = mortgageYearsRemaining * 12;

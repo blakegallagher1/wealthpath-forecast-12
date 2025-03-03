@@ -116,7 +116,7 @@ export const calculateInvestmentGrowth = (
     if (age >= inputs.ssStartAge) {
       retirementIncome += inputs.socialSecurityBenefit * 12;
       // Add spouse social security if applicable
-      if (inputs.spouseName && age - inputs.currentAge + inputs.spouseAge >= inputs.ssStartAge) {
+      if (inputs.spouseName && inputs.spouseAge && age - inputs.currentAge + inputs.spouseAge >= inputs.ssStartAge) {
         retirementIncome += inputs.spouseSocialSecurityBenefit * 12;
       }
     }
