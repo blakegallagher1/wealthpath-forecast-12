@@ -25,8 +25,14 @@ const IncomeSourcesTab = ({ plan }: IncomeSourcesTabProps) => {
   const primaryWorkingIncome = incomeSourcesData.find(data => (data.primaryIncome || 0) > 0)?.primaryIncome || 0;
   const spouseWorkingIncome = incomeSourcesData.find(data => (data.spouseIncome || 0) > 0)?.spouseIncome || 0;
   
+  // Get Social Security values
+  const primarySS = ssStartingPoint?.socialSecurity || 0;
+  const spouseSS = ssStartingPoint?.spouseSocialSecurity || 0;
+  const totalSS = primarySS + spouseSS;
+  
   // Summarize data
   const hasSpouseIncome = incomeSourcesData.some(data => (data.spouseIncome || 0) > 0) || false;
+  const hasSpouseSS = incomeSourcesData.some(data => (data.spouseSocialSecurity || 0) > 0) || false;
   
   return (
     <Card>
@@ -53,6 +59,14 @@ const IncomeSourcesTab = ({ plan }: IncomeSourcesTabProps) => {
               <p className="font-medium">Total Retirement Income:</p>
               <p>{formatCurrency(totalRetirementIncome)}/year</p>
             </div>
+            
+            {totalSS > 0 && (
+              <div className="text-sm">
+                <p className="font-medium">Social Security Income:</p>
+                <p>{formatCurrency(primarySS)}/year primary</p>
+                {hasSpouseSS && <p>{formatCurrency(spouseSS)}/year spouse</p>}
+              </div>
+            )}
           </div>
         </CardDescription>
       </CardHeader>

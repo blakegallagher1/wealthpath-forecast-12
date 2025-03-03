@@ -73,6 +73,40 @@ export function adjustPIAForClaimingAge(pia: number, claimingAge: number): numbe
   }
 }
 
+/**
+ * Calculate spousal benefit (up to 50% of primary worker's PIA)
+ * Spousal benefits are reduced if claimed before FRA
+ */
+export function calculateSpousalBenefit(primaryPIA: number, spousePIA: number, claimingAge: number): number {
+  // Calculate the maximum spousal benefit (50% of primary worker's PIA)
+  const maxSpousalBenefit = primaryPIA * 0.5;
+  
+  // The higher of their own benefit or spousal benefit
+  const ownBenefit = adjustPIAForClaimingAge(spousePIA, claimingAge);
+  
+  // If claiming before FRA, spousal benefits are reduced
+  const fra = 67;
+  let adjustedSpousalBenefit = maxSpousalBenefit;
+  
+  if (claimingAge < fra) {
+    const monthsEarly = (fra - claimingAge) * 12;
+    // For spousal benefits, reduction is 25/36 of 1% per month for first 36 months
+    // and 5/12 of 1% for additional months
+    let reductionFactor = 0;
+    
+    if (monthsEarly <= 36) {
+      reductionFactor = monthsEarly * (25/36) * 0.01;
+    } else {
+      reductionFactor = (36 * (25/36) * 0.01) + ((monthsEarly - 36) * (5/12) * 0.01);
+    }
+    
+    adjustedSpousalBenefit = maxSpousalBenefit * (1 - reductionFactor);
+  }
+  
+  // Return the higher of their own benefit or spousal benefit
+  return Math.max(ownBenefit, adjustedSpousalBenefit);
+}
+
 export function generateSocialSecurityData(inputs: CalculatorInputs): SocialSecurityDataPoint[] {
   // Calculate primary benefit from income
   const aime = calculateAIME(inputs.annualIncome || 0);
@@ -100,18 +134,21 @@ export function generateSocialSecurityData(inputs: CalculatorInputs): SocialSecu
   return [
     {
       claimingAge: 62,
-      monthlyBenefit: adjustPIAForClaimingAge(pia, 62) + (spousePia > 0 ? adjustPIAForClaimingAge(spousePia, 62) : 0),
-      lifetimeTotal: (adjustPIAForClaimingAge(pia, 62) + (spousePia > 0 ? adjustPIAForClaimingAge(spousePia, 62) : 0)) * 12 * lifeExpectancyAfter62
+      monthlyBenefit: adjustPIAForClaimingAge(pia, 62),
+      monthlySpouseBenefit: spousePia > 0 ? calculateSpousalBenefit(pia, spousePia, 62) : 0,
+      lifetimeTotal: (adjustPIAForClaimingAge(pia, 62) + (spousePia > 0 ? calculateSpousalBenefit(pia, spousePia, 62) : 0)) * 12 * lifeExpectancyAfter62
     },
     {
       claimingAge: 67,
-      monthlyBenefit: pia + spousePia,
-      lifetimeTotal: (pia + spousePia) * 12 * Math.max(0, (inputs.lifeExpectancy || 90) - 67)
+      monthlyBenefit: pia,
+      monthlySpouseBenefit: spousePia > 0 ? Math.max(spousePia, pia * 0.5) : 0,
+      lifetimeTotal: (pia + (spousePia > 0 ? Math.max(spousePia, pia * 0.5) : 0)) * 12 * Math.max(0, (inputs.lifeExpectancy || 90) - 67)
     },
     {
       claimingAge: 70,
-      monthlyBenefit: adjustPIAForClaimingAge(pia, 70) + (spousePia > 0 ? adjustPIAForClaimingAge(spousePia, 70) : 0),
-      lifetimeTotal: (adjustPIAForClaimingAge(pia, 70) + (spousePia > 0 ? adjustPIAForClaimingAge(spousePia, 70) : 0)) * 12 * Math.max(0, (inputs.lifeExpectancy || 90) - 70)
+      monthlyBenefit: adjustPIAForClaimingAge(pia, 70),
+      monthlySpouseBenefit: spousePia > 0 ? calculateSpousalBenefit(pia, spousePia, 70) : 0, 
+      lifetimeTotal: (adjustPIAForClaimingAge(pia, 70) + (spousePia > 0 ? calculateSpousalBenefit(pia, spousePia, 70) : 0)) * 12 * Math.max(0, (inputs.lifeExpectancy || 90) - 70)
     }
   ];
 }

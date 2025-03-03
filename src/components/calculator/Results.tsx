@@ -65,6 +65,16 @@ const Results = ({ plan, inputs, onRecalculate }: ResultsProps) => {
       //   body: JSON.stringify({ email: emailAddress, planData: plan, inputs })
       // });
       
+      // Get spouse data for summary
+      const hasSpousalSS = plan.incomeSourcesData.some(d => d.spouseSocialSecurity > 0);
+      const ssStartingPoint = plan.incomeSourcesData.find(d => d.socialSecurity > 0);
+      const spouseBenefitSummary = hasSpousalSS ? 
+        `Your spouse is eligible for ${new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          maximumFractionDigits: 0,
+        }).format(ssStartingPoint?.spouseSocialSecurity || 0)} annually in Social Security benefits.` : '';
+      
       setIsEmailDialogOpen(false);
       setEmailAddress("");
       

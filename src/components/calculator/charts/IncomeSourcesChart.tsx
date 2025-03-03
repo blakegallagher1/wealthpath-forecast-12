@@ -16,6 +16,7 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
     primaryIncome: "#3b82f6",  // Blue for primary income
     spouseIncome: "#6366f1",   // Indigo for spouse income
     socialSecurity: "#8b5cf6", // Purple for social security
+    spouseSocialSecurity: "#a855f7", // Light purple for spouse social security
     retirement: "#ec4899",     // Pink for retirement
     pension: "#10b981",        // Green for pension
     rmd: "#f59e0b",            // Amber for RMDs
@@ -120,7 +121,15 @@ const IncomeSourcesChart = ({ data }: IncomeSourcesChartProps) => {
           stackId="1"
           stroke={colors.socialSecurity}
           fill={colors.socialSecurity}
-          name="Social Security (Auto-Calculated)"
+          name="Primary Social Security"
+        />
+        <Area
+          type="monotone"
+          dataKey="spouseSocialSecurity"
+          stackId="1"
+          stroke={colors.spouseSocialSecurity}
+          fill={colors.spouseSocialSecurity}
+          name="Spouse Social Security"
         />
         <Area
           type="monotone"

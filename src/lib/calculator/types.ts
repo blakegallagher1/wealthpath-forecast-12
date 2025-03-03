@@ -80,6 +80,7 @@ export interface IncomeSourcesDataPoint {
   primaryIncome: number;
   spouseIncome: number;
   socialSecurity: number;
+  spouseSocialSecurity: number; // Added spouse social security as separate field
   retirement: number;
   pension: number;
   rmd: number;
@@ -91,6 +92,7 @@ export interface IncomeSourcesDataPoint {
 export interface SocialSecurityDataPoint {
   claimingAge: number;
   monthlyBenefit: number;
+  monthlySpouseBenefit: number; // Added spouse benefit field
   lifetimeTotal?: number;
 }
 

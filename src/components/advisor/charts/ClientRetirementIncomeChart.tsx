@@ -70,10 +70,11 @@ const ClientRetirementIncomeChart = ({
           contentStyle={{ fontSize: '12px' }}
         />
         {showLegend && <Legend />}
-        <Bar dataKey="socialSecurity" stackId="a" fill="#3b82f6" name="Social Security" />
-        <Bar dataKey="pension" stackId="a" fill="#8b5cf6" name="Pension" />
+        <Bar dataKey="primarySocialSecurity" stackId="a" fill="#3b82f6" name="Primary Social Security" />
+        <Bar dataKey="spouseSocialSecurity" stackId="a" fill="#8b5cf6" name="Spouse Social Security" />
+        <Bar dataKey="pension" stackId="a" fill="#10b981" name="Pension" />
         <Bar dataKey="workIncome" stackId="a" fill="#f59e0b" name="Work Income" />
-        <Bar dataKey="investmentIncome" stackId="a" fill="#10b981" name="Investment Income" />
+        <Bar dataKey="investmentIncome" stackId="a" fill="#ef4444" name="Investment Income" />
         <Bar dataKey="otherIncome" stackId="a" fill="#6b7280" name="Other Income" />
         {retirementAge && (
           <ReferenceLine
@@ -119,11 +120,20 @@ const ClientRetirementIncomeChart = ({
         <Line
           type="monotone"
           dataKey="monthlyBenefit"
-          name="Monthly Benefit"
+          name="Primary Monthly Benefit"
           stroke="#3b82f6"
           strokeWidth={2}
           dot={{ stroke: '#3b82f6', strokeWidth: 2, r: 4 }}
           activeDot={{ stroke: '#3b82f6', strokeWidth: 2, r: 6 }}
+        />
+        <Line
+          type="monotone"
+          dataKey="monthlySpouseBenefit"
+          name="Spouse Monthly Benefit"
+          stroke="#8b5cf6"
+          strokeWidth={2}
+          dot={{ stroke: '#8b5cf6', strokeWidth: 2, r: 4 }}
+          activeDot={{ stroke: '#8b5cf6', strokeWidth: 2, r: 6 }}
         />
         <Line
           type="monotone"

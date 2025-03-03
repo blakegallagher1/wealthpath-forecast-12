@@ -1,5 +1,6 @@
+
 import { CalculatorInputs, IncomeSourcesDataPoint } from "./types";
-import { calculateAIME, calculatePIA, adjustPIAForClaimingAge } from "./socialSecurityCalculator";
+import { calculateAIME, calculatePIA, adjustPIAForClaimingAge, calculateSpousalBenefit } from "./socialSecurityCalculator";
 
 export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourcesDataPoint[] {
   if (!inputs) return [];
@@ -26,17 +27,23 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
   let monthlySSBenefit = 0;
   let monthlySpouseSSBenefit = 0;
   
-  // Use highest career income as basis (assume growth continues)
+  // Calculate primary SS benefit
   const highestIncome = (inputs?.annualIncome || 0) * Math.pow(1 + incomeGrowthRate, retirementAge - currentAge);
   const aime = calculateAIME(highestIncome);
   const pia = calculatePIA(aime);
   monthlySSBenefit = adjustPIAForClaimingAge(pia, ssStartAge);
   
-  if (inputs?.spouseIncome && inputs.spouseIncome > 0) {
+  // Calculate spouse SS benefit (either their own or spousal benefit, whichever is higher)
+  if (inputs?.spouseIncome && inputs.spouseIncome > 0 && spouseAge > 0) {
     const highestSpouseIncome = inputs.spouseIncome * Math.pow(1 + spouseIncomeGrowthRate, spouseRetirementAge - spouseAge);
     const spouseAime = calculateAIME(highestSpouseIncome);
     const spousePia = calculatePIA(spouseAime);
-    monthlySpouseSSBenefit = adjustPIAForClaimingAge(spousePia, ssStartAge);
+    
+    // Calculate the higher of their own benefit or spousal benefit
+    const spouseOwnBenefit = adjustPIAForClaimingAge(spousePia, ssStartAge);
+    const spousalBenefit = pia * 0.5; // 50% of primary's PIA at FRA
+    
+    monthlySpouseSSBenefit = calculateSpousalBenefit(pia, spousePia, ssStartAge);
   }
   
   for (let age = currentAge; age <= lifeExpectancy; age++) {
@@ -46,6 +53,7 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
     let primaryIncome = 0;
     let spouseIncome = 0;
     let socialSecurity = 0;
+    let spouseSocialSecurity = 0;
     let retirement = 0;
     let pension = 0;
     let rmd = 0;
@@ -69,17 +77,13 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
     }
     
     if (age >= retirementAge) {
-      // Social Security (starts at SS age)
+      // Primary Social Security (starts at SS age)
       if (age >= ssStartAge) {
-        // Add primary SS benefit
         socialSecurity = monthlySSBenefit * 12;
         
-        // Add spouse SS if applicable and if spouse has reached SS age
-        if (monthlySpouseSSBenefit > 0) {
-          // Assuming spouse's SS age is the same as primary
-          if (spouseCurrentAge >= ssStartAge) {
-            socialSecurity += monthlySpouseSSBenefit * 12;
-          }
+        // Spouse Social Security if applicable and if spouse has reached SS age
+        if (monthlySpouseSSBenefit > 0 && spouseCurrentAge >= ssStartAge) {
+          spouseSocialSecurity = monthlySpouseSSBenefit * 12;
         }
       }
       
@@ -113,7 +117,7 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
       }
     }
     
-    const total = primaryIncome + spouseIncome + socialSecurity + retirement + pension + rmd + taxable;
+    const total = primaryIncome + spouseIncome + socialSecurity + spouseSocialSecurity + retirement + pension + rmd + taxable;
     
     data.push({
       age,
@@ -121,6 +125,7 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
       primaryIncome,
       spouseIncome,
       socialSecurity,
+      spouseSocialSecurity,
       retirement,
       pension,
       rmd,
