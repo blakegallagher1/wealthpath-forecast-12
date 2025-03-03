@@ -1,4 +1,3 @@
-
 import { CalculatorInputs, IncomeSourcesDataPoint } from "./types";
 import { calculateAIME, calculatePIA, adjustPIAForClaimingAge } from "./socialSecurityCalculator";
 
@@ -23,24 +22,17 @@ export function generateIncomeSourcesData(inputs: CalculatorInputs): IncomeSourc
   // Withdrawal rate from retirement plan
   const withdrawalRate = (inputs?.retirementWithdrawalRate ? inputs.retirementWithdrawalRate / 100 : 0.04); // Default to 4%
   
-  // Pre-calculate Social Security benefits
+  // Pre-calculate Social Security benefits based on income
   let monthlySSBenefit = 0;
   let monthlySpouseSSBenefit = 0;
   
-  // Calculate SS benefits based on income or use provided values
-  if (inputs?.socialSecurityBenefit && inputs.socialSecurityBenefit > 0) {
-    monthlySSBenefit = inputs.socialSecurityBenefit;
-  } else {
-    // Use highest career income as basis (assume growth continues)
-    const highestIncome = (inputs?.annualIncome || 0) * Math.pow(1 + incomeGrowthRate, retirementAge - currentAge);
-    const aime = calculateAIME(highestIncome);
-    const pia = calculatePIA(aime);
-    monthlySSBenefit = adjustPIAForClaimingAge(pia, ssStartAge);
-  }
+  // Use highest career income as basis (assume growth continues)
+  const highestIncome = (inputs?.annualIncome || 0) * Math.pow(1 + incomeGrowthRate, retirementAge - currentAge);
+  const aime = calculateAIME(highestIncome);
+  const pia = calculatePIA(aime);
+  monthlySSBenefit = adjustPIAForClaimingAge(pia, ssStartAge);
   
-  if (inputs?.spouseSocialSecurityBenefit && inputs.spouseSocialSecurityBenefit > 0) {
-    monthlySpouseSSBenefit = inputs.spouseSocialSecurityBenefit;
-  } else if (inputs?.spouseIncome && inputs.spouseIncome > 0) {
+  if (inputs?.spouseIncome && inputs.spouseIncome > 0) {
     const highestSpouseIncome = inputs.spouseIncome * Math.pow(1 + spouseIncomeGrowthRate, spouseRetirementAge - spouseAge);
     const spouseAime = calculateAIME(highestSpouseIncome);
     const spousePia = calculatePIA(spouseAime);

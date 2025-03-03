@@ -57,8 +57,8 @@ export interface CalculatorInputs {
   inflationRate: number;
   retirementWithdrawalRate: number;
   lifeExpectancy: number;
-  socialSecurityBenefit?: number; // Made optional since we'll calculate it
-  spouseSocialSecurityBenefit?: number; // Made optional since we'll calculate it
+  socialSecurityBenefit?: number; // Keep optional for backward compatibility
+  spouseSocialSecurityBenefit?: number; // Keep optional for backward compatibility
 }
 
 export interface NetWorthDataPoint {

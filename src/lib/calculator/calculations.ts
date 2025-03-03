@@ -1,4 +1,3 @@
-
 import { calculateNetWorthProjection } from "./netWorthCalculator";
 import { generateIncomeSourcesData } from "./incomeSourcesCalculator";
 import { generateWithdrawalStrategyData } from "./withdrawalStrategyCalculator";
@@ -53,12 +52,16 @@ export const calculateRetirementPlan = (inputs: CalculatorInputs): RetirementPla
   // Using the 4% rule (or user-specified withdrawal rate)
   const withdrawalAmount = adjustedRetirementSavings * (inputs.retirementWithdrawalRate / 100);
   
+  // Calculate Social Security benefit
+  const socialSecurityData = generateSocialSecurityData(inputs);
+  // Use FRA (age 67) social security amount
+  const ssAtFRA = socialSecurityData.find(d => d.claimingAge === 67)?.monthlyBenefit || 0;
+  
   // Add social security and pension (if applicable)
-  const annualSocialSecurity = inputs.socialSecurityBenefit * 12;
-  const annualSpouseSocialSecurity = inputs.spouseSocialSecurityBenefit * 12;
+  const annualSocialSecurity = ssAtFRA * 12;  
   const annualPension = inputs.hasPension ? inputs.pensionAmount : 0;
   
-  const totalAnnualRetirementIncome = withdrawalAmount + annualSocialSecurity + annualSpouseSocialSecurity + annualPension;
+  const totalAnnualRetirementIncome = withdrawalAmount + annualSocialSecurity + annualPension;
   
   // Calculate sustainability score (0-100)
   // Based on income replacement ratio, portfolio longevity, and diversification

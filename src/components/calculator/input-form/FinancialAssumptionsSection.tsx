@@ -67,31 +67,6 @@ const FinancialAssumptionsSection = ({ inputs, onChange }: FinancialAssumptionsS
           className="mt-1.5"
         />
       </div>
-
-      <div>
-        <Label htmlFor="socialSecurityBenefit">Monthly Social Security Benefit ($)</Label>
-        <Input
-          id="socialSecurityBenefit"
-          type="number"
-          min={0}
-          value={inputs.socialSecurityBenefit?.toString() || "0"}
-          onChange={(e) => handleNumberChange("socialSecurityBenefit", e.target.value)}
-          className="mt-1.5"
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="spouseSocialSecurityBenefit">Spouse Monthly Social Security Benefit ($)</Label>
-        <Input
-          id="spouseSocialSecurityBenefit"
-          type="number"
-          min={0}
-          value={inputs.spouseSocialSecurityBenefit?.toString() || "0"}
-          onChange={(e) => handleNumberChange("spouseSocialSecurityBenefit", e.target.value)}
-          className="mt-1.5"
-          disabled={!inputs.spouseName}
-        />
-      </div>
     </motion.div>
   );
 };

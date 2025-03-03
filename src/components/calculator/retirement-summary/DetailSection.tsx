@@ -24,6 +24,10 @@ const DetailSection = ({ plan, inputs }: DetailSectionProps) => {
     ? (plan.estimatedAnnualRetirementIncome / currentTotalIncome) * 100 
     : 0;
 
+  // Get Social Security data from the plan
+  const ssAtFRA = plan.socialSecurityData.find(d => d.claimingAge === 67)?.monthlyBenefit || 0;
+  const annualSocialSecurity = ssAtFRA * 12;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-y-6 gap-x-8">
       <div>
@@ -63,7 +67,7 @@ const DetailSection = ({ plan, inputs }: DetailSectionProps) => {
           </div>
           <div className="flex justify-between items-center text-sm">
             <span>Social Security:</span>
-            <span className="font-medium">{formatSummaryValue(inputs.socialSecurityBenefit * 12)}/yr</span>
+            <span className="font-medium">{formatSummaryValue(annualSocialSecurity)}/yr</span>
           </div>
         </div>
       </div>

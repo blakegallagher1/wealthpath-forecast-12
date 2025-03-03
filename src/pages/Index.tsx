@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import Calculator from "@/components/calculator/Calculator";
 import Header from "@/components/layout/Header";
@@ -13,9 +12,7 @@ import { toast } from "@/components/ui/use-toast";
 const Index = () => {
   const navigate = useNavigate();
   const [calculatorInputs, setCalculatorInputs] = useState<CalculatorInputs>({
-    ...calculatorDefaults,
-    socialSecurityBenefit: 0,
-    spouseSocialSecurityBenefit: 0
+    ...calculatorDefaults
   });
 
   const loadTestData = () => {
@@ -41,10 +38,6 @@ const Index = () => {
       taxableInvestments: 3000,
       realEstateEquity: 0,
       annual401kContribution: 0,
-      
-      // Ensure Social Security fields are explicitly set
-      socialSecurityBenefit: 0,
-      spouseSocialSecurityBenefit: 0,
     };
     
     setCalculatorInputs(testData);

@@ -74,17 +74,9 @@ export function adjustPIAForClaimingAge(pia: number, claimingAge: number): numbe
 }
 
 export function generateSocialSecurityData(inputs: CalculatorInputs): SocialSecurityDataPoint[] {
-  // Calculate base benefit using income if SS benefit not specified
-  let pia = 0;
-  
-  if (inputs.socialSecurityBenefit && inputs.socialSecurityBenefit > 0) {
-    // If user has specified a value, use that as the PIA (at full retirement age)
-    pia = inputs.socialSecurityBenefit;
-  } else {
-    // Otherwise calculate from income
-    const aime = calculateAIME(inputs.annualIncome || 0);
-    pia = calculatePIA(aime);
-  }
+  // Calculate primary benefit from income
+  const aime = calculateAIME(inputs.annualIncome || 0);
+  let pia = calculatePIA(aime);
   
   // Cap at realistic maximum ($4,873 in 2024)
   pia = Math.min(pia, 4873);
@@ -92,17 +84,14 @@ export function generateSocialSecurityData(inputs: CalculatorInputs): SocialSecu
   // Calculate spouse's PIA if applicable
   let spousePia = 0;
   
-  if (inputs.spouseSocialSecurityBenefit && inputs.spouseSocialSecurityBenefit > 0) {
-    // If user has specified a spouse value, use that as the spouse PIA
-    spousePia = inputs.spouseSocialSecurityBenefit;
-  } else if (inputs.spouseIncome && inputs.spouseIncome > 0) {
-    // Otherwise calculate from spouse income
+  if (inputs.spouseIncome && inputs.spouseIncome > 0) {
+    // Calculate from spouse income
     const spouseAime = calculateAIME(inputs.spouseIncome || 0);
     spousePia = calculatePIA(spouseAime);
+    
+    // Cap spouse PIA at realistic maximum
+    spousePia = Math.min(spousePia, 4873);
   }
-  
-  // Cap spouse PIA at realistic maximum
-  spousePia = Math.min(spousePia, 4873);
   
   // Life expectancy after age 62
   const lifeExpectancyAfter62 = Math.max(0, (inputs.lifeExpectancy || 90) - 62);
